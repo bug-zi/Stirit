@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-strange-stir-fry.local/schemas/evaluation-result.schema.json",
+  "title": "EvaluationResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dish_name",
+    "scores",
+    "grade",
+    "comment",
+    "customer_reaction"
+  ],
+  "properties": {
+    "dish_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 24
+    },
+    "scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relevance",
+        "taste",
+        "emotion",
+        "risk"
+      ],
+      "properties": {
+        "relevance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "taste": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "emotion": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "risk": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "grade": {
+      "type": "string",
+      "enum": ["S", "A", "B", "C", "D", "F"]
+    },
+    "comment": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "customer_reaction": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    }
+  }
+}

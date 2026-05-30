@@ -1,0 +1,297 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/approach_cutscene.gd" id="1_approach"]
+
+[sub_resource type="Animation" id="Animation_approach"]
+resource_name = "approach"
+length = 2.8
+loop_mode = 0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Character:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 2.2, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(-180, 410), Vector2(240, 410), Vector2(240, 410)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("TitlePanel:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Portrait:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("TitlePanel:position")
+tracks/3/interp = 2
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.35),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(200, 6), Vector2(200, 24)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Background/LanternLeft:modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.6, 1.1, 1.6, 2.2, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.9), Color(1, 1, 1, 0.75), Color(1, 1, 1, 0.95), Color(1, 1, 1, 0.8), Color(1, 1, 1, 0.92), Color(1, 1, 1, 0.85)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Background/LanternRight:modulate")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 0.5, 1.0, 1.5, 2.1, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.88), Color(1, 1, 1, 0.78), Color(1, 1, 1, 0.92), Color(1, 1, 1, 0.8), Color(1, 1, 1, 0.9), Color(1, 1, 1, 0.84)]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Stall/Steam1:position")
+tracks/6/interp = 2
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0, 1.0, 2.0, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(132, 30), Vector2(132, 8), Vector2(132, -6), Vector2(132, -12)]
+}
+tracks/7/type = "value"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Stall/Steam1:modulate")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0, 0.3, 2.2, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0.55), Color(1, 1, 1, 0.28), Color(1, 1, 1, 0)]
+}
+tracks/8/type = "value"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Stall/Steam2:position")
+tracks/8/interp = 2
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"times": PackedFloat32Array(0, 1.2, 2.2, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(170, 36), Vector2(170, 14), Vector2(170, -2), Vector2(170, -8)]
+}
+tracks/9/type = "value"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Stall/Steam2:modulate")
+tracks/9/interp = 1
+tracks/9/loop_wrap = true
+tracks/9/keys = {
+"times": PackedFloat32Array(0, 0.4, 2.3, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0.45), Color(1, 1, 1, 0.22), Color(1, 1, 1, 0)]
+}
+tracks/10/type = "value"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath("Stall/Steam3:position")
+tracks/10/interp = 2
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 1.1, 2.1, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(206, 34), Vector2(206, 12), Vector2(206, -4), Vector2(206, -10)]
+}
+tracks/11/type = "value"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("Stall/Steam3:modulate")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0, 0.35, 2.25, 2.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0.5), Color(1, 1, 1, 0.24), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_1"]
+_data = {
+"approach": SubResource("Animation_approach")
+}
+
+[node name="ApproachCutscene" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_approach")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.101961, 0.101961, 0.180392, 1)
+
+[node name="Ground" type="ColorRect" parent="Background"]
+anchors_preset = 10
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -140.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.0745098, 0.0784314, 0.137255, 1)
+
+[node name="StallGlow" type="ColorRect" parent="Background"]
+offset_left = 360.0
+offset_top = 230.0
+offset_right = 800.0
+offset_bottom = 470.0
+color = Color(0.95, 0.74, 0.18, 0.08)
+
+[node name="LanternLeft" type="ColorRect" parent="Background"]
+offset_left = 344.0
+offset_top = 200.0
+offset_right = 366.0
+offset_bottom = 256.0
+color = Color(0.95, 0.62, 0.18, 1)
+
+[node name="LanternLeftGlow" type="ColorRect" parent="Background/LanternLeft"]
+offset_left = -18.0
+offset_top = -12.0
+offset_right = 40.0
+offset_bottom = 64.0
+color = Color(0.95, 0.62, 0.18, 0.12)
+
+[node name="LanternRight" type="ColorRect" parent="Background"]
+offset_left = 806.0
+offset_top = 204.0
+offset_right = 828.0
+offset_bottom = 260.0
+color = Color(0.95, 0.62, 0.18, 1)
+
+[node name="LanternRightGlow" type="ColorRect" parent="Background/LanternRight"]
+offset_left = -18.0
+offset_top = -12.0
+offset_right = 40.0
+offset_bottom = 64.0
+color = Color(0.95, 0.62, 0.18, 0.12)
+
+[node name="TitlePanel" type="PanelContainer" parent="."]
+offset_left = 200.0
+offset_top = 24.0
+offset_right = 824.0
+offset_bottom = 106.0
+modulate = Color(1, 1, 1, 0)
+
+[node name="Box" type="VBoxContainer" parent="TitlePanel"]
+alignment = 1
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 612.0
+offset_bottom = 74.0
+theme_override_constants/separation = 2
+
+[node name="ShopName" type="Label" parent="TitlePanel/Box"]
+text = "你来说我来炒"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 34
+theme_override_colors/font_color = Color(1, 0.9, 0.72, 1)
+
+[node name="Subtitle" type="Label" parent="TitlePanel/Box"]
+text = "深夜怪菜摊 · 正在接待"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.82, 0.9, 1, 0.75)
+
+[node name="Portrait" type="TextureRect" parent="."]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 120.0
+offset_bottom = 120.0
+expand_mode = 3
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0)
+
+[node name="Stall" type="PanelContainer" parent="."]
+offset_left = 420.0
+offset_top = 260.0
+offset_right = 740.0
+offset_bottom = 430.0
+
+[node name="Steam1" type="ColorRect" parent="Stall"]
+offset_left = 132.0
+offset_top = 30.0
+offset_right = 156.0
+offset_bottom = 54.0
+modulate = Color(1, 1, 1, 0)
+color = Color(0.92, 0.95, 1, 0.35)
+
+[node name="Steam2" type="ColorRect" parent="Stall"]
+offset_left = 170.0
+offset_top = 36.0
+offset_right = 190.0
+offset_bottom = 56.0
+modulate = Color(1, 1, 1, 0)
+color = Color(0.92, 0.95, 1, 0.28)
+
+[node name="Steam3" type="ColorRect" parent="Stall"]
+offset_left = 206.0
+offset_top = 34.0
+offset_right = 228.0
+offset_bottom = 56.0
+modulate = Color(1, 1, 1, 0)
+color = Color(0.92, 0.95, 1, 0.3)
+
+[node name="Character" type="TextureRect" parent="."]
+offset_left = -120.0
+offset_top = 410.0
+offset_right = 8.0
+offset_bottom = 538.0
+expand_mode = 3
+stretch_mode = 0
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_1")
+}

@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "schema": "CookingMethod",
+  "usage": "每单选择 1 种烹饪方式。",
+  "methods": [
+    {
+      "id": "method_stir_fry",
+      "name": "爆炒",
+      "tags": ["刺激", "热烈", "混乱", "上头"],
+      "description": "把所有情绪都炒到冒烟。",
+      "effect_key": "hot"
+    },
+    {
+      "id": "method_iced",
+      "name": "冰镇",
+      "tags": ["清凉", "清爽", "克制", "冷静"],
+      "description": "给离谱降温，也给疲惫一点清醒。",
+      "effect_key": "cold"
+    },
+    {
+      "id": "method_deep_fry",
+      "name": "油炸",
+      "tags": ["罪恶", "快乐", "油炸", "夜市"],
+      "description": "让健康退后一步，让快乐先说话。",
+      "effect_key": "crispy"
+    },
+    {
+      "id": "method_slow_stew",
+      "name": "慢炖",
+      "tags": ["温暖", "治愈", "家常", "安慰"],
+      "description": "把慌张炖软，把狼狈炖香。",
+      "effect_key": "warm"
+    }
+  ]
+}

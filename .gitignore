@@ -1,0 +1,28 @@
+# Godot specific
+.godot/
+*.import
+*.uid
+export.cfg
+export_presets.cfg
+ai_config.local.json
+supabase_config.local.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.code-workspace
+
+# Godot temp
+tmp/
+temp/
+
+# Local notes
+AI_TODO.md

@@ -1,0 +1,69 @@
+[gd_scene format=3]
+
+[node name="CustomerPanelLeft" type="PanelContainer"]
+custom_minimum_size = Vector2(340, 0)
+size_flags_vertical = 3
+
+[node name="Box" type="VBoxContainer" parent="."]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Box"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="AvatarFrame" type="PanelContainer" parent="Box/Header"]
+custom_minimum_size = Vector2(80, 80)
+clip_contents = true
+
+[node name="Avatar" type="TextureRect" parent="Box/Header/AvatarFrame"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 3
+stretch_mode = 6
+
+[node name="Right" type="VBoxContainer" parent="Box/Header"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Box/Header/Right"]
+text = "订单"
+theme_override_font_sizes/font_size = 18
+
+[node name="Signature" type="Label" parent="Box/Header/Right"]
+text = ""
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 16
+
+[node name="BodyCenter" type="CenterContainer" parent="Box"]
+custom_minimum_size = Vector2(0, 240)
+size_flags_horizontal = 3
+
+[node name="Body" type="TextureRect" parent="Box/BodyCenter"]
+custom_minimum_size = Vector2(240, 240)
+expand_mode = 3
+stretch_mode = 5
+
+[node name="RequestPanel" type="PanelContainer" parent="Box"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RequestBox" type="VBoxContainer" parent="Box/RequestPanel"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Request" type="Label" parent="Box/RequestPanel/RequestBox"]
+text = ""
+autowrap_mode = 3
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 22
+
+[node name="WantsLabel" type="Label" parent="Box/RequestPanel/RequestBox"]
+text = ""
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 16

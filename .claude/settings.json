@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"E:/Godot/Godot_v4.6.3-stable_win64.exe/Godot_v4.6.3-stable_win64.exe\" --path \"e:/Coderlife/Stirit-master\" --editor)",
+      "Bash(\"E:/Godot/Godot_v4.6.3-stable_win64.exe/Godot_v4.6.3-stable_win64.exe\" --path \"e:/Coderlife/Stirit-master\")",
+      "Bash(taskkill /f /im Godot_v4.6.3-stable_win64.exe)",
+      "Bash(\"E:/Godot/Godot_v4.6.3-stable_win64.exe/Godot_v4.6.3-stable_win64.exe\" --path \"e:/Coderlife/Stirit-master\" --verbose)"
+    ]
+  }
+}
