@@ -48,7 +48,7 @@ const LEVEL_TITLES := [
 
 const BUFF_POOL := [
 	{"id": "tip_bonus", "name": "好评小费", "description": "A/S 评价额外获得 20 金币。"},
-	{"id": "cost_control", "name": "成本控制", "description": "后续接待成本降低 10%。"},
+	{"id": "cost_control", "name": "成本控制", "description": "后续出锅成本降低 10%。"},
 	{"id": "signature_price", "name": "招牌溢价", "description": "S 级菜品报酬提高 30%。"},
 	{"id": "mistake_insurance", "name": "失误补救", "description": "第一次 D/F 评价按 C 级报酬结算。"},
 	{"id": "streak_heat", "name": "连击热锅", "description": "A/S 连击报酬倍率额外提高 5%。"}
@@ -250,6 +250,7 @@ var seasoning_buttons: Dictionary = {}
 var method_buttons: Dictionary = {}
 var selected_chips_box: Container
 var status_label: Label
+var economy_label: Label
 var cook_button: Button
 var _bg_overlay: TextureRect
 var _bg_offset := Vector2.ZERO
@@ -885,9 +886,9 @@ class StallApproachView:
 			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), "BOSS · " + customer_name, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 22, Color(1.0, 0.3, 0.3, flicker))
 			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 34 * tile), customer_role, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 14, Color(0.78, 0.88, 1.0, 0.7))
 		else:
-			var label_col := Color(0.92, 0.95, 1.0, 0.85)
-			draw_rect(Rect2(origin + Vector2(18 * tile, 14 * tile), Vector2(54 * tile, 10 * tile)), Color(0.08, 0.09, 0.16, 0.9))
-			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), customer_name, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 18, label_col)
+			var label_col := Color(1.0, 0.94, 0.65, 0.95)
+			draw_rect(Rect2(origin + Vector2(18 * tile, 14 * tile), Vector2(54 * tile, 10 * tile)), Color(0.06, 0.06, 0.12, 0.95))
+			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), customer_name, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 22, label_col)
 			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 34 * tile), customer_role, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 14, Color(0.78, 0.88, 1.0, 0.7))
 
 		_draw_fairy_lights(origin, tile)
@@ -1396,8 +1397,8 @@ func _pick_next_order() -> void:
 		var pool_index := rng.randi_range(0, normal_order_pool.size() - 1)
 		current_order = normal_order_pool[pool_index]
 		normal_order_pool.remove_at(pool_index)
-	current_service_cost = _calculate_service_cost(current_order)
-	if current_funds < current_service_cost:
+	current_service_cost = 0
+	if current_funds < _peek_next_service_cost():
 		day_index = int(floor(float(completed_orders) / float(TOTAL_ORDERS))) + 1
 		_show_bankruptcy_screen()
 		return
@@ -1418,13 +1419,48 @@ func _roll_presented_items(source: Array, desired_tags: Array, total: int, min_r
 
 	var picked: Array = []
 	var want_total := clampi(total, 1, source.size())
-	var want_relevant := clampi(min_relevant, 0, want_total)
-	if relevant.is_empty():
-		want_relevant = 0
-	if relevant.size() < want_relevant:
-		want_relevant = relevant.size()
+	var desired_unique: Array = []
+	for t in desired_tags:
+		var s := str(t).strip_edges()
+		if s != "" and not desired_unique.has(s):
+			desired_unique.append(s)
+	var uncovered := desired_unique.duplicate()
 
-	for _i in range(want_relevant):
+	while picked.size() < want_total and not uncovered.is_empty() and not relevant.is_empty():
+		var best_gain := 0
+		var best_indices: Array[int] = []
+		for i in range(relevant.size()):
+			var tags: Array = relevant[i].get("tags", [])
+			var gain := 0
+			for ut in uncovered:
+				if tags.has(ut):
+					gain += 1
+			if gain > best_gain:
+				best_gain = gain
+				best_indices.clear()
+				best_indices.append(i)
+			elif gain == best_gain and gain > 0:
+				best_indices.append(i)
+		if best_gain <= 0 or best_indices.is_empty():
+			break
+		var pick_idx := best_indices[rng.randi_range(0, best_indices.size() - 1)]
+		var picked_item = relevant[pick_idx]
+		picked.append(picked_item)
+		var picked_tags: Array = picked_item.get("tags", [])
+		for j in range(uncovered.size() - 1, -1, -1):
+			if picked_tags.has(uncovered[j]):
+				uncovered.remove_at(j)
+		relevant.remove_at(pick_idx)
+
+	var available_relevant_total := picked.size() + relevant.size()
+	var want_relevant := clampi(min_relevant, 0, want_total)
+	want_relevant = mini(want_relevant, available_relevant_total)
+	while picked.size() < want_total and picked.size() < want_relevant and not relevant.is_empty():
+		var idx := rng.randi_range(0, relevant.size() - 1)
+		picked.append(relevant[idx])
+		relevant.remove_at(idx)
+
+	while picked.size() < want_total and not relevant.is_empty():
 		var idx := rng.randi_range(0, relevant.size() - 1)
 		picked.append(relevant[idx])
 		relevant.remove_at(idx)
@@ -1433,11 +1469,6 @@ func _roll_presented_items(source: Array, desired_tags: Array, total: int, min_r
 		var idx := rng.randi_range(0, irrelevant.size() - 1)
 		picked.append(irrelevant[idx])
 		irrelevant.remove_at(idx)
-
-	while picked.size() < want_total and not relevant.is_empty():
-		var idx := rng.randi_range(0, relevant.size() - 1)
-		picked.append(relevant[idx])
-		relevant.remove_at(idx)
 
 	return picked
 
@@ -1464,7 +1495,7 @@ func _show_approach_screen() -> void:
 				cutscene.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				cutscene.size_flags_vertical = Control.SIZE_EXPAND_FILL
 				if cutscene.has_method("setup"):
-					cutscene.call("setup", walk_sheet, portrait, "", "", bool(current_order.get("boss", false)))
+					cutscene.call("setup", walk_sheet, portrait, str(current_order.get("customer_name", "")), str(current_order.get("role", "")), bool(current_order.get("boss", false)))
 				if cutscene.has_signal("finished"):
 					cutscene.connect("finished", Callable(self, "_on_approach_finished"))
 				page.add_child(cutscene)
@@ -1713,7 +1744,13 @@ func _build_customer_panel_left() -> Control:
 				var signature := panel.find_child("Signature", true, false)
 				if signature is Label:
 					customer_signature_label = signature as Label
-					customer_signature_label.add_theme_color_override("font_color", COLOR_TEXT_MUTED)
+					customer_signature_label.add_theme_font_size_override("font_size", 22)
+					customer_signature_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.3, 1.0))
+
+				var header_title := panel.find_child("Title", true, false)
+				if header_title is Label:
+					(header_title as Label).add_theme_font_size_override("font_size", 16)
+					(header_title as Label).add_theme_color_override("font_color", Color(0.78, 0.84, 0.92, 0.75))
 
 				var request := panel.find_child("Request", true, false)
 				if request is Label:
@@ -1753,7 +1790,7 @@ func _build_customer_panel_left() -> Control:
 	header.add_child(right)
 
 	right.add_child(_make_label("订单", 18, COLOR_SECONDARY))
-	customer_signature_label = _make_label("", 16, COLOR_TEXT_MUTED)
+	customer_signature_label = _make_label("", 22, Color(1.0, 0.92, 0.3, 1.0))
 	customer_signature_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	right.add_child(customer_signature_label)
 
@@ -1800,12 +1837,20 @@ func _build_pot_panel_center() -> Control:
 	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
 
-	selected_chips_box = HFlowContainer.new()
-	selected_chips_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	selected_chips_box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	selected_chips_box.add_theme_constant_override("h_separation", 10)
-	selected_chips_box.add_theme_constant_override("v_separation", 10)
-	box.add_child(selected_chips_box)
+	var chips_scroll := ScrollContainer.new()
+	chips_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chips_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	chips_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	chips_scroll.custom_minimum_size = Vector2(0, 56)
+	chips_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	box.add_child(chips_scroll)
+
+	var chips_row := HBoxContainer.new()
+	chips_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chips_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	chips_row.add_theme_constant_override("separation", 10)
+	chips_scroll.add_child(chips_row)
+	selected_chips_box = chips_row
 
 	pot_view = PotView.new()
 	pot_view.custom_minimum_size = Vector2(0, 340)
@@ -1829,9 +1874,9 @@ func _build_pot_panel_center() -> Control:
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(status_label)
 
-	var economy := _make_label("接待成本：%d  当前资金：%d" % [current_service_cost, current_funds], 16, Color(1.0, 0.74, 0.58), HORIZONTAL_ALIGNMENT_CENTER)
-	economy.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(economy)
+	economy_label = _make_label("成本：%d  当前资金：%d" % [current_service_cost, current_funds], 16, Color(1.0, 0.74, 0.58), HORIZONTAL_ALIGNMENT_CENTER)
+	economy_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(economy_label)
 
 	var tags := _make_label("想要：" + "、".join(current_order["desired_tags"]), 14, Color(0.72, 0.83, 0.96))
 	tags.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -2019,6 +2064,7 @@ func _make_method_button(method: Dictionary, group: ButtonGroup) -> Button:
 func _refresh_playing_ui() -> void:
 	if not is_instance_valid(playing_root):
 		return
+	current_service_cost = _calculate_selection_cost()
 
 	if is_instance_valid(order_label):
 		order_label.text = "第 %d/%d 单%s" % [order_index + 1, TOTAL_ORDERS, " · BOSS" if current_order.get("boss", false) else ""]
@@ -2038,7 +2084,16 @@ func _refresh_playing_ui() -> void:
 	if is_instance_valid(customer_request_label):
 		customer_request_label.text = "“%s”" % str(current_order.get("request", ""))
 	if is_instance_valid(customer_signature_label):
-		customer_signature_label.text = "— %s · %s" % [str(current_order.get("customer_name", "")), str(current_order.get("role", ""))]
+		var name_text := str(current_order.get("customer_name", "")).strip_edges()
+		var role_text := str(current_order.get("role", "")).strip_edges()
+		var boss := bool(current_order.get("boss", false))
+		customer_signature_label.add_theme_font_size_override("font_size", 22)
+		if boss:
+			customer_signature_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
+			customer_signature_label.text = "BOSS · %s\n%s" % [name_text, role_text]
+		else:
+			customer_signature_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.3, 1.0))
+			customer_signature_label.text = "%s\n%s" % [name_text, role_text]
 	var wants_label := playing_root.find_child("WantsLabel", true, false)
 	if wants_label is Label:
 		(wants_label as Label).text = "想要：" + "、".join(current_order.get("desired_tags", []))
@@ -2083,6 +2138,8 @@ func _refresh_playing_ui() -> void:
 	if is_instance_valid(status_label):
 		status_label.text = status_text
 		status_label.add_theme_color_override("font_color", status_color)
+	if is_instance_valid(economy_label):
+		economy_label.text = "成本：%d  当前资金：%d" % [current_service_cost, current_funds]
 
 	if is_instance_valid(cook_button):
 		_apply_button_accent(cook_button, COLOR_SECONDARY if _is_selection_valid() else COLOR_PRIMARY)
@@ -2494,7 +2551,7 @@ func _show_bankruptcy_screen() -> void:
 		average = int(round(float(total_score) / float(round_results.size())))
 	var best := _get_best_result()
 	box.add_child(_make_label("破产结算", 44, Color(1.0, 0.68, 0.58), HORIZONTAL_ALIGNMENT_CENTER))
-	box.add_child(_make_label("资金不足以接待下一位顾客，怪菜摊暂时打烊。", 22, Color(0.96, 0.88, 0.82), HORIZONTAL_ALIGNMENT_CENTER))
+	box.add_child(_make_label("资金不足以完成下一单（最低成本 %d），怪菜摊暂时打烊。" % _peek_next_service_cost(), 22, Color(0.96, 0.88, 0.82), HORIZONTAL_ALIGNMENT_CENTER))
 	box.add_child(_make_label("接待 %d 单   撑到第 %d 天   最终资金 %d" % [completed_orders, day_index, current_funds], 23, Color(0.92, 0.95, 1.0), HORIZONTAL_ALIGNMENT_CENTER))
 	box.add_child(_make_label("最高头衔：%s Lv.%d   平均分 %d" % [player_title, player_level, average], 22, Color(0.82, 1.0, 0.82), HORIZONTAL_ALIGNMENT_CENTER))
 	box.add_child(_make_label("最佳菜品：%s / %d 分" % [best.get("dish_name", "暂无"), best.get("total_score", 0)], 20, Color(0.93, 0.88, 0.72), HORIZONTAL_ALIGNMENT_CENTER))
@@ -2865,6 +2922,13 @@ func _submit_dish(from_timeout: bool) -> void:
 			return
 	if not _is_selection_valid():
 		message_text = "还没法出锅：请至少选 2 个食材、1 个调料和 1 种烹饪方式。"
+		_refresh_playing_ui()
+		return
+
+	var cost := _calculate_selection_cost()
+	current_service_cost = cost
+	if not from_timeout and current_funds < cost:
+		message_text = "资金不足：本次成本 %d，当前资金 %d。" % [cost, current_funds]
 		_refresh_playing_ui()
 		return
 
@@ -3318,14 +3382,42 @@ func _roll_buff_choices() -> Array:
 	return choices
 
 func _peek_next_service_cost() -> int:
-	var next_order: Dictionary = current_order
-	if order_index >= TOTAL_ORDERS - 1:
-		var normal_orders := _get_orders(false)
-		if not normal_orders.is_empty():
-			next_order = normal_orders[0]
-	elif not normal_order_pool.is_empty():
-		next_order = normal_order_pool[0]
-	return _calculate_service_cost(next_order)
+	var min_ingredient := 999999
+	for item in INGREDIENTS:
+		min_ingredient = mini(min_ingredient, _price_for_item(item, "ingredient"))
+	var min_seasoning := 999999
+	for item in SEASONINGS:
+		min_seasoning = mini(min_seasoning, _price_for_item(item, "seasoning"))
+	return max(1, min_ingredient * INGREDIENT_MIN + min_seasoning * SEASONING_MIN + _method_cost(""))
+
+func _method_cost(method_id: String) -> int:
+	match method_id:
+		"method_deep_fry":
+			return 6
+		"method_slow_stew":
+			return 4
+		"method_stir_fry":
+			return 4
+		"method_iced":
+			return 2
+		_:
+			return 2
+
+func _calculate_selection_cost() -> int:
+	var cost := 0
+	for id in selected_ingredient_ids:
+		var item := _find_by_id(str(id), INGREDIENTS)
+		if not item.is_empty():
+			cost += _price_for_item(item, "ingredient")
+	for id in selected_seasoning_ids:
+		var item := _find_by_id(str(id), SEASONINGS)
+		if not item.is_empty():
+			cost += _price_for_item(item, "seasoning")
+	if selected_method_id != "":
+		cost += _method_cost(selected_method_id)
+	if active_buffs.has("cost_control"):
+		cost = int(round(float(cost) * 0.9))
+	return max(0, cost)
 
 func _grade_for_score(score: int) -> String:
 	if score >= 90:
@@ -4815,6 +4907,7 @@ func _clear_screen() -> void:
 	customer_signature_label = null
 	selected_chips_box = null
 	status_label = null
+	economy_label = null
 	cook_button = null
 	pot_view = null
 	ingredient_buttons.clear()
