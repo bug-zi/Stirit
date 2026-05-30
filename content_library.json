@@ -1,390 +1,390 @@
 {
   "food_items": [
-    {
-      "id": "ingredient_noodle",
-      "name": "泡面",
-      "category": "ingredient",
-      "tags": ["便宜", "学生", "深夜", "续命", "敷衍"],
-      "description": "深夜救命粮，便宜但很有故事。",
-      "unlocked": true
-    },
-    {
-      "id": "ingredient_rice",
-      "name": "米饭",
-      "category": "ingredient",
-      "tags": ["饱腹", "稳定", "朴素", "家常", "地基"],
-      "description": "一切混乱的地基，能把怪东西拉回饭桌。",
-      "unlocked": true
-    },
-    {
-      "id": "ingredient_egg",
-      "name": "鸡蛋",
-      "category": "ingredient",
-      "tags": ["营养", "基础", "可靠", "温和", "回血"],
-      "description": "朴素但很难出错，像厨房里的标准答案。",
-      "unlocked": true
-    },
-    {
-      "id": "ingredient_frozen_dumpling",
-      "name": "速冻饺子",
-      "category": "ingredient",
-      "tags": ["家常", "方便", "孤独", "深夜", "储备"],
-      "description": "冰箱里的最后一道防线，热起来就算有人惦记。",
-      "unlocked": true
-    },
-    {
-      "id": "ingredient_milk_tea",
-      "name": "奶茶",
-      "category": "ingredient",
-      "tags": ["甜", "安慰", "校园", "负罪感", "快乐"],
-      "description": "快乐来得很快，后悔也不慢。",
-      "unlocked": true
-    },
-    {
-      "id": "ingredient_coffee_jelly",
-      "name": "咖啡冻",
-      "category": "ingredient",
-      "tags": ["提神", "苦", "熬夜", "续命", "焦虑"],
-      "description": "苦中带弹，还能再撑两小时。",
-      "unlocked": true
-    },
-    {
-      "id": "ingredient_hotpot_ball",
-      "name": "火锅丸子",
-      "category": "ingredient",
-      "tags": ["热闹", "社交", "油腻", "满足", "团建"],
-      "description": "一口下去像多人会议，没人知道里面具体有什么。",
-      "unlocked": true
-    },
-    {
-      "id": "ingredient_sausage",
-      "name": "烤肠",
-      "category": "ingredient",
-      "tags": ["夜市", "便宜", "快乐", "罪恶", "烟火"],
-      "description": "校门口永远的精神支柱。",
-      "unlocked": true
-    },
-    {
-      "id": "ingredient_grass_jelly",
-      "name": "仙草",
-      "category": "ingredient",
-      "tags": ["清凉", "安慰", "夜市", "柔和", "降火"],
-      "description": "给燥热人生按下暂停键。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_bitter_melon",
-      "name": "苦瓜",
-      "category": "ingredient",
-      "tags": ["苦", "健康", "清火", "成年人", "克制"],
-      "description": "一种很有道理但没人想听的味道。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_banana",
-      "name": "香蕉",
-      "category": "ingredient",
-      "tags": ["运动", "快乐", "柔软", "轻松", "补能"],
-      "description": "有点滑稽，但确实有用。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_mushroom",
-      "name": "蘑菇",
-      "category": "ingredient",
-      "tags": ["神秘", "柔软", "幻觉", "森林", "不确定"],
-      "description": "让菜品变得不太好解释。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_fried_chicken",
-      "name": "炸鸡块",
-      "category": "ingredient",
-      "tags": ["快乐", "罪恶", "夜宵", "油腻", "奖励"],
-      "description": "适合庆祝，也适合假装今天值得庆祝。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_broccoli",
-      "name": "西兰花",
-      "category": "ingredient",
-      "tags": ["健康", "克制", "绿色", "清醒", "自律"],
-      "description": "像健康生活伸出来的一只手，但不一定握得住。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_cheese",
-      "name": "芝士",
-      "category": "ingredient",
-      "tags": ["浓郁", "安慰", "负担", "快乐", "粘稠"],
-      "description": "把问题盖住，不代表问题不存在，但确实香。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_rice_cake",
-      "name": "年糕",
-      "category": "ingredient",
-      "tags": ["黏糊", "饱腹", "年轻", "社交", "弹牙"],
-      "description": "越嚼越认真，像拖延症最后十分钟。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_tofu",
-      "name": "豆腐",
-      "category": "ingredient",
-      "tags": ["温和", "柔软", "家常", "清淡", "包容"],
-      "description": "没有强烈主见，所以能接住很多情绪。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_seaweed",
-      "name": "海苔",
-      "category": "ingredient",
-      "tags": ["咸鲜", "海风", "轻盈", "宅", "童年"],
-      "description": "薄薄一片，负责让平淡突然有海味。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_fries",
-      "name": "薯条",
-      "category": "ingredient",
-      "tags": ["快乐", "速食", "罪恶", "放纵", "脆"],
-      "description": "理智知道不该点，手已经伸过去了。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_tomato",
-      "name": "番茄",
-      "category": "ingredient",
-      "tags": ["酸甜", "清爽", "家常", "诚实", "开胃"],
-      "description": "负责把一锅混乱说成可以理解的酸甜人生。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_beef_cube",
-      "name": "牛肉粒",
-      "category": "ingredient",
-      "tags": ["扎实", "蛋白质", "奖励", "能量", "昂贵"],
-      "description": "吃起来像今天终于被认真对待了一下。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_konjac",
-      "name": "魔芋",
-      "category": "ingredient",
-      "tags": ["低卡", "弹牙", "健康", "克制", "虚假饱腹"],
-      "description": "像在认真生活，但嘴巴知道这事有点悬。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_edamame",
-      "name": "毛豆",
-      "category": "ingredient",
-      "tags": ["下酒", "轻松", "社交", "夏夜", "咸香"],
-      "description": "聊天时最不抢戏，但一停下来就会继续剥。",
-      "unlocked": false
-    },
-    {
-      "id": "ingredient_marshmallow",
-      "name": "棉花糖",
-      "category": "ingredient",
-      "tags": ["甜", "幼稚", "梦幻", "空气感", "风险"],
-      "description": "像把童年直接扔进锅里，结果不保证理智。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_chili",
-      "name": "辣椒",
-      "category": "seasoning",
-      "tags": ["刺激", "热烈", "痛感", "上头", "风险"],
-      "description": "让一切变得认真起来。",
-      "unlocked": true
-    },
-    {
-      "id": "seasoning_sugar",
-      "name": "糖",
-      "category": "seasoning",
-      "tags": ["甜", "快乐", "安慰", "幼稚", "回血"],
-      "description": "简单粗暴的情绪补丁。",
-      "unlocked": true
-    },
-    {
-      "id": "seasoning_mint",
-      "name": "薄荷",
-      "category": "seasoning",
-      "tags": ["清爽", "冷静", "提神", "克制", "清醒"],
-      "description": "给大脑开一扇窗。",
-      "unlocked": true
-    },
-    {
-      "id": "seasoning_dark_chocolate",
-      "name": "黑巧",
-      "category": "seasoning",
-      "tags": ["苦", "成熟", "克制", "压力", "回甘"],
-      "description": "成年人的甜味需要绕一圈。",
-      "unlocked": true
-    },
-    {
-      "id": "seasoning_cilantro",
-      "name": "香菜",
-      "category": "seasoning",
-      "tags": ["争议", "强烈", "个性", "冲击", "分裂"],
-      "description": "爱的人很爱，怕的人很怕。",
-      "unlocked": true
-    },
-    {
-      "id": "seasoning_honey",
-      "name": "蜂蜜",
-      "category": "seasoning",
-      "tags": ["温柔", "甜", "修复", "安抚", "顺滑"],
-      "description": "温和地把生活糊住。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_garlic",
-      "name": "大蒜",
-      "category": "seasoning",
-      "tags": ["冲击", "驱散", "社恐", "强烈", "存在感"],
-      "description": "适合驱邪，也适合驱人。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_hotpot_base",
-      "name": "火锅底料",
-      "category": "seasoning",
-      "tags": ["刺激", "热闹", "社交", "重口", "冒险"],
-      "description": "一勺下去，世界开始喧哗。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_lemon_juice",
-      "name": "柠檬汁",
-      "category": "seasoning",
-      "tags": ["酸", "清醒", "犀利", "开胃", "轻盈"],
-      "description": "像一句突然正确但有点扎心的话。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_sesame_paste",
-      "name": "芝麻酱",
-      "category": "seasoning",
-      "tags": ["浓厚", "温暖", "社交", "安慰", "黏稠"],
-      "description": "把食物拽进一种认真吃饭的氛围里。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_wasabi",
-      "name": "芥末",
-      "category": "seasoning",
-      "tags": ["冲击", "清醒", "鼻腔", "冒险", "风险"],
-      "description": "给灵魂一个垂直起跳的机会。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_curry_powder",
-      "name": "咖喱粉",
-      "category": "seasoning",
-      "tags": ["浓郁", "温暖", "异域", "饱腹", "热闹"],
-      "description": "一撒就像这锅东西有了更远的来历。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_sea_salt",
-      "name": "海盐",
-      "category": "seasoning",
-      "tags": ["咸", "朴素", "提味", "稳定", "清爽"],
-      "description": "不抢戏，但能让别人的戏更像回事。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_vinegar",
-      "name": "醋",
-      "category": "seasoning",
-      "tags": ["酸", "解腻", "清醒", "反转", "克制"],
-      "description": "负责在油腻快要失控时拉一下刹车。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_sichuan_pepper",
-      "name": "花椒",
-      "category": "seasoning",
-      "tags": ["麻", "刺激", "上头", "川味", "风险"],
-      "description": "让嘴巴先掉线一会儿，脑子随后跟上。",
-      "unlocked": false
-    },
-    {
-      "id": "seasoning_condensed_milk",
-      "name": "炼乳",
-      "category": "seasoning",
-      "tags": ["甜", "奶香", "安慰", "负罪感", "童年"],
-      "description": "把成熟计划临时改回儿童频道。",
-      "unlocked": false
-    }
+	{
+	  "id": "ingredient_noodle",
+	  "name": "泡面",
+	  "category": "ingredient",
+	  "tags": ["便宜", "学生", "深夜", "续命", "敷衍"],
+	  "description": "深夜救命粮，便宜但很有故事。",
+	  "unlocked": true
+	},
+	{
+	  "id": "ingredient_rice",
+	  "name": "米饭",
+	  "category": "ingredient",
+	  "tags": ["饱腹", "稳定", "朴素", "家常", "地基"],
+	  "description": "一切混乱的地基，能把怪东西拉回饭桌。",
+	  "unlocked": true
+	},
+	{
+	  "id": "ingredient_egg",
+	  "name": "鸡蛋",
+	  "category": "ingredient",
+	  "tags": ["营养", "基础", "可靠", "温和", "回血"],
+	  "description": "朴素但很难出错，像厨房里的标准答案。",
+	  "unlocked": true
+	},
+	{
+	  "id": "ingredient_frozen_dumpling",
+	  "name": "速冻饺子",
+	  "category": "ingredient",
+	  "tags": ["家常", "方便", "孤独", "深夜", "储备"],
+	  "description": "冰箱里的最后一道防线，热起来就算有人惦记。",
+	  "unlocked": true
+	},
+	{
+	  "id": "ingredient_milk_tea",
+	  "name": "奶茶",
+	  "category": "ingredient",
+	  "tags": ["甜", "安慰", "校园", "负罪感", "快乐"],
+	  "description": "快乐来得很快，后悔也不慢。",
+	  "unlocked": true
+	},
+	{
+	  "id": "ingredient_coffee_jelly",
+	  "name": "咖啡冻",
+	  "category": "ingredient",
+	  "tags": ["提神", "苦", "熬夜", "续命", "焦虑"],
+	  "description": "苦中带弹，还能再撑两小时。",
+	  "unlocked": true
+	},
+	{
+	  "id": "ingredient_hotpot_ball",
+	  "name": "火锅丸子",
+	  "category": "ingredient",
+	  "tags": ["热闹", "社交", "油腻", "满足", "团建"],
+	  "description": "一口下去像多人会议，没人知道里面具体有什么。",
+	  "unlocked": true
+	},
+	{
+	  "id": "ingredient_sausage",
+	  "name": "烤肠",
+	  "category": "ingredient",
+	  "tags": ["夜市", "便宜", "快乐", "罪恶", "烟火"],
+	  "description": "校门口永远的精神支柱。",
+	  "unlocked": true
+	},
+	{
+	  "id": "ingredient_grass_jelly",
+	  "name": "仙草",
+	  "category": "ingredient",
+	  "tags": ["清凉", "安慰", "夜市", "柔和", "降火"],
+	  "description": "给燥热人生按下暂停键。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_bitter_melon",
+	  "name": "苦瓜",
+	  "category": "ingredient",
+	  "tags": ["苦", "健康", "清火", "成年人", "克制"],
+	  "description": "一种很有道理但没人想听的味道。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_banana",
+	  "name": "香蕉",
+	  "category": "ingredient",
+	  "tags": ["运动", "快乐", "柔软", "轻松", "补能"],
+	  "description": "有点滑稽，但确实有用。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_mushroom",
+	  "name": "蘑菇",
+	  "category": "ingredient",
+	  "tags": ["神秘", "柔软", "幻觉", "森林", "不确定"],
+	  "description": "让菜品变得不太好解释。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_fried_chicken",
+	  "name": "炸鸡块",
+	  "category": "ingredient",
+	  "tags": ["快乐", "罪恶", "夜宵", "油腻", "奖励"],
+	  "description": "适合庆祝，也适合假装今天值得庆祝。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_broccoli",
+	  "name": "西兰花",
+	  "category": "ingredient",
+	  "tags": ["健康", "克制", "绿色", "清醒", "自律"],
+	  "description": "像健康生活伸出来的一只手，但不一定握得住。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_cheese",
+	  "name": "芝士",
+	  "category": "ingredient",
+	  "tags": ["浓郁", "安慰", "负担", "快乐", "粘稠"],
+	  "description": "把问题盖住，不代表问题不存在，但确实香。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_rice_cake",
+	  "name": "年糕",
+	  "category": "ingredient",
+	  "tags": ["黏糊", "饱腹", "年轻", "社交", "弹牙"],
+	  "description": "越嚼越认真，像拖延症最后十分钟。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_tofu",
+	  "name": "豆腐",
+	  "category": "ingredient",
+	  "tags": ["温和", "柔软", "家常", "清淡", "包容"],
+	  "description": "没有强烈主见，所以能接住很多情绪。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_seaweed",
+	  "name": "海苔",
+	  "category": "ingredient",
+	  "tags": ["咸鲜", "海风", "轻盈", "宅", "童年"],
+	  "description": "薄薄一片，负责让平淡突然有海味。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_fries",
+	  "name": "薯条",
+	  "category": "ingredient",
+	  "tags": ["快乐", "速食", "罪恶", "放纵", "脆"],
+	  "description": "理智知道不该点，手已经伸过去了。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_tomato",
+	  "name": "番茄",
+	  "category": "ingredient",
+	  "tags": ["酸甜", "清爽", "家常", "诚实", "开胃"],
+	  "description": "负责把一锅混乱说成可以理解的酸甜人生。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_beef_cube",
+	  "name": "牛肉粒",
+	  "category": "ingredient",
+	  "tags": ["扎实", "蛋白质", "奖励", "能量", "昂贵"],
+	  "description": "吃起来像今天终于被认真对待了一下。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_konjac",
+	  "name": "魔芋",
+	  "category": "ingredient",
+	  "tags": ["低卡", "弹牙", "健康", "克制", "虚假饱腹"],
+	  "description": "像在认真生活，但嘴巴知道这事有点悬。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_edamame",
+	  "name": "毛豆",
+	  "category": "ingredient",
+	  "tags": ["下酒", "轻松", "社交", "夏夜", "咸香"],
+	  "description": "聊天时最不抢戏，但一停下来就会继续剥。",
+	  "unlocked": false
+	},
+	{
+	  "id": "ingredient_marshmallow",
+	  "name": "棉花糖",
+	  "category": "ingredient",
+	  "tags": ["甜", "幼稚", "梦幻", "空气感", "风险"],
+	  "description": "像把童年直接扔进锅里，结果不保证理智。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_chili",
+	  "name": "辣椒",
+	  "category": "seasoning",
+	  "tags": ["刺激", "热烈", "痛感", "上头", "风险"],
+	  "description": "让一切变得认真起来。",
+	  "unlocked": true
+	},
+	{
+	  "id": "seasoning_sugar",
+	  "name": "糖",
+	  "category": "seasoning",
+	  "tags": ["甜", "快乐", "安慰", "幼稚", "回血"],
+	  "description": "简单粗暴的情绪补丁。",
+	  "unlocked": true
+	},
+	{
+	  "id": "seasoning_mint",
+	  "name": "薄荷",
+	  "category": "seasoning",
+	  "tags": ["清爽", "冷静", "提神", "克制", "清醒"],
+	  "description": "给大脑开一扇窗。",
+	  "unlocked": true
+	},
+	{
+	  "id": "seasoning_dark_chocolate",
+	  "name": "黑巧",
+	  "category": "seasoning",
+	  "tags": ["苦", "成熟", "克制", "压力", "回甘"],
+	  "description": "成年人的甜味需要绕一圈。",
+	  "unlocked": true
+	},
+	{
+	  "id": "seasoning_cilantro",
+	  "name": "香菜",
+	  "category": "seasoning",
+	  "tags": ["争议", "强烈", "个性", "冲击", "分裂"],
+	  "description": "爱的人很爱，怕的人很怕。",
+	  "unlocked": true
+	},
+	{
+	  "id": "seasoning_honey",
+	  "name": "蜂蜜",
+	  "category": "seasoning",
+	  "tags": ["温柔", "甜", "修复", "安抚", "顺滑"],
+	  "description": "温和地把生活糊住。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_garlic",
+	  "name": "大蒜",
+	  "category": "seasoning",
+	  "tags": ["冲击", "驱散", "社恐", "强烈", "存在感"],
+	  "description": "适合驱邪，也适合驱人。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_hotpot_base",
+	  "name": "火锅底料",
+	  "category": "seasoning",
+	  "tags": ["刺激", "热闹", "社交", "重口", "冒险"],
+	  "description": "一勺下去，世界开始喧哗。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_lemon_juice",
+	  "name": "柠檬汁",
+	  "category": "seasoning",
+	  "tags": ["酸", "清醒", "犀利", "开胃", "轻盈"],
+	  "description": "像一句突然正确但有点扎心的话。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_sesame_paste",
+	  "name": "芝麻酱",
+	  "category": "seasoning",
+	  "tags": ["浓厚", "温暖", "社交", "安慰", "黏稠"],
+	  "description": "把食物拽进一种认真吃饭的氛围里。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_wasabi",
+	  "name": "芥末",
+	  "category": "seasoning",
+	  "tags": ["冲击", "清醒", "鼻腔", "冒险", "风险"],
+	  "description": "给灵魂一个垂直起跳的机会。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_curry_powder",
+	  "name": "咖喱粉",
+	  "category": "seasoning",
+	  "tags": ["浓郁", "温暖", "异域", "饱腹", "热闹"],
+	  "description": "一撒就像这锅东西有了更远的来历。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_sea_salt",
+	  "name": "海盐",
+	  "category": "seasoning",
+	  "tags": ["咸", "朴素", "提味", "稳定", "清爽"],
+	  "description": "不抢戏，但能让别人的戏更像回事。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_vinegar",
+	  "name": "醋",
+	  "category": "seasoning",
+	  "tags": ["酸", "解腻", "清醒", "反转", "克制"],
+	  "description": "负责在油腻快要失控时拉一下刹车。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_sichuan_pepper",
+	  "name": "花椒",
+	  "category": "seasoning",
+	  "tags": ["麻", "刺激", "上头", "川味", "风险"],
+	  "description": "让嘴巴先掉线一会儿，脑子随后跟上。",
+	  "unlocked": false
+	},
+	{
+	  "id": "seasoning_condensed_milk",
+	  "name": "炼乳",
+	  "category": "seasoning",
+	  "tags": ["甜", "奶香", "安慰", "负罪感", "童年"],
+	  "description": "把成熟计划临时改回儿童频道。",
+	  "unlocked": false
+	}
   ],
   "cooking_methods": [
-    {
-      "id": "method_stir_fry",
-      "name": "爆炒",
-      "tags": ["刺激", "热烈", "混乱", "上头", "反击"],
-      "description": "把所有情绪都炒到冒烟。",
-      "effect_key": "hot",
-      "unlocked": true
-    },
-    {
-      "id": "method_chill",
-      "name": "冰镇",
-      "tags": ["清爽", "冷静", "克制", "清醒", "降火"],
-      "description": "把过热的人生先放进冷藏室。",
-      "effect_key": "cold",
-      "unlocked": true
-    },
-    {
-      "id": "method_slow_stew",
-      "name": "慢炖",
-      "tags": ["温暖", "治愈", "稳定", "饱腹", "修复"],
-      "description": "让疲惫在锅里慢慢变软。",
-      "effect_key": "warm",
-      "unlocked": true
-    },
-    {
-      "id": "method_deep_fry",
-      "name": "油炸",
-      "tags": ["快乐", "罪恶", "爽感", "负担", "放纵"],
-      "description": "给理智裹上面衣，然后下锅。",
-      "effect_key": "crispy",
-      "unlocked": true
-    },
-    {
-      "id": "method_microwave",
-      "name": "微波",
-      "tags": ["快速", "敷衍", "学生", "应急", "干燥"],
-      "description": "适合来不及体面，但还想活着。",
-      "effect_key": "quick",
-      "unlocked": false
-    },
-    {
-      "id": "method_grill",
-      "name": "炙烤",
-      "tags": ["烟火", "焦香", "夜市", "直接", "热烈"],
-      "description": "把表面烤出勇气，也可能烤出焦虑。",
-      "effect_key": "smoke",
-      "unlocked": false
-    },
-    {
-      "id": "method_steam",
-      "name": "蒸汽",
-      "tags": ["温和", "清淡", "健康", "克制", "稳定"],
-      "description": "用最少的戏剧性，把食物变熟。",
-      "effect_key": "steam",
-      "unlocked": false
-    },
-    {
-      "id": "method_cold_mix",
-      "name": "凉拌",
-      "tags": ["清爽", "轻松", "草率", "夏天", "开胃"],
-      "description": "不用开火，也能把情绪拌匀。",
-      "effect_key": "fresh",
-      "unlocked": false
-    }
+	{
+	  "id": "method_stir_fry",
+	  "name": "爆炒",
+	  "tags": ["刺激", "热烈", "混乱", "上头", "反击"],
+	  "description": "把所有情绪都炒到冒烟。",
+	  "effect_key": "hot",
+	  "unlocked": true
+	},
+	{
+	  "id": "method_chill",
+	  "name": "冰镇",
+	  "tags": ["清爽", "冷静", "克制", "清醒", "降火"],
+	  "description": "把过热的人生先放进冷藏室。",
+	  "effect_key": "cold",
+	  "unlocked": true
+	},
+	{
+	  "id": "method_slow_stew",
+	  "name": "慢炖",
+	  "tags": ["温暖", "治愈", "稳定", "饱腹", "修复"],
+	  "description": "让疲惫在锅里慢慢变软。",
+	  "effect_key": "warm",
+	  "unlocked": true
+	},
+	{
+	  "id": "method_deep_fry",
+	  "name": "油炸",
+	  "tags": ["快乐", "罪恶", "爽感", "负担", "放纵"],
+	  "description": "给理智裹上面衣，然后下锅。",
+	  "effect_key": "crispy",
+	  "unlocked": true
+	},
+	{
+	  "id": "method_microwave",
+	  "name": "微波",
+	  "tags": ["快速", "敷衍", "学生", "应急", "干燥"],
+	  "description": "适合来不及体面，但还想活着。",
+	  "effect_key": "quick",
+	  "unlocked": false
+	},
+	{
+	  "id": "method_grill",
+	  "name": "炙烤",
+	  "tags": ["烟火", "焦香", "夜市", "直接", "热烈"],
+	  "description": "把表面烤出勇气，也可能烤出焦虑。",
+	  "effect_key": "smoke",
+	  "unlocked": false
+	},
+	{
+	  "id": "method_steam",
+	  "name": "蒸汽",
+	  "tags": ["温和", "清淡", "健康", "克制", "稳定"],
+	  "description": "用最少的戏剧性，把食物变熟。",
+	  "effect_key": "steam",
+	  "unlocked": false
+	},
+	{
+	  "id": "method_cold_mix",
+	  "name": "凉拌",
+	  "tags": ["清爽", "轻松", "草率", "夏天", "开胃"],
+	  "description": "不用开火，也能把情绪拌匀。",
+	  "effect_key": "fresh",
+	  "unlocked": false
+	}
   ]
 }

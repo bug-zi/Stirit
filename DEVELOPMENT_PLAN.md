@@ -254,10 +254,10 @@
 {
   "dish_name": "期末续命爆炒面",
   "scores": {
-    "relevance": 88,
-    "taste": 62,
-    "emotion": 91,
-    "risk": 74
+	"relevance": 88,
+	"taste": 62,
+	"emotion": 91,
+	"risk": 74
   },
   "grade": "A",
   "comment": "这道菜很像凌晨三点的自救：不健康，但确实能把人从地上拽起来。",

@@ -191,23 +191,23 @@ AI 需要输出：
 ```json
 {
   "customer": {
-    "name": "赶项目的学生",
-    "role": "熬夜写代码的本科生",
-    "request": "我想吃一个像期末周一样崩溃但还能续命的东西。",
-    "desired_tags": ["续命", "熬夜", "焦虑", "刺激"],
-    "avoid_tags": ["过度健康", "太平淡"]
+	"name": "赶项目的学生",
+	"role": "熬夜写代码的本科生",
+	"request": "我想吃一个像期末周一样崩溃但还能续命的东西。",
+	"desired_tags": ["续命", "熬夜", "焦虑", "刺激"],
+	"avoid_tags": ["过度健康", "太平淡"]
   },
   "dish": {
-    "ingredients": ["泡面", "咖啡冻", "鸡蛋"],
-    "seasonings": ["辣椒", "糖"],
-    "cooking_method": "爆炒",
-    "semantic_tags": ["便宜", "学生", "深夜", "续命", "提神", "焦虑", "营养", "刺激", "甜", "混乱"]
+	"ingredients": ["泡面", "咖啡冻", "鸡蛋"],
+	"seasonings": ["辣椒", "糖"],
+	"cooking_method": "爆炒",
+	"semantic_tags": ["便宜", "学生", "深夜", "续命", "提神", "焦虑", "营养", "刺激", "甜", "混乱"]
   },
   "system_score": {
-    "relevance": 84,
-    "taste": 66,
-    "emotion": 88,
-    "risk": 72
+	"relevance": 84,
+	"taste": 66,
+	"emotion": 88,
+	"risk": 72
   }
 }
 ```
@@ -220,10 +220,10 @@ AI 必须返回固定 JSON：
 {
   "dish_name": "期末续命爆炒面",
   "scores": {
-    "relevance": 88,
-    "taste": 62,
-    "emotion": 91,
-    "risk": 74
+	"relevance": 88,
+	"taste": 62,
+	"emotion": 91,
+	"risk": 74
   },
   "grade": "A",
   "comment": "这道菜很像凌晨三点的自救：不健康，但确实能把人从地上拽起来。",

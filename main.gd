@@ -65,8 +65,8 @@ const CHARACTER_SHEET_COLS := 4
 const CHARACTER_SHEET_ROWS := 4
 const CUSTOMER_IDLE_SHEET_COLS := 5
 const CUSTOMER_IDLE_SHEET_ROWS := 4
-const CUSTOMER_PORTRAIT_COL := 0
-const CUSTOMER_PORTRAIT_ROW := 1
+const CUSTOMER_PORTRAIT_COL := 4
+const CUSTOMER_PORTRAIT_ROW := 3
 const CHARACTER_IDLE_SHEETS := [
 	"res://assets/characters/pixel_character_1/Idle/Blue_Head_Idle-Sheet.png",
 	"res://assets/characters/pixel_character_1/Idle/Orange_Head_Idle-Sheet.png",
@@ -833,8 +833,6 @@ class StallApproachView:
 		draw_rect(Rect2(origin, canvas), Color(0.05, 0.05, 0.11))
 		_draw_floor(origin, tile)
 
-		_draw_stall(origin, tile)
-
 		var title_alpha: float = clampf(walk_t * 1.15, 0.0, 1.0) * (0.88 + 0.08 * sin(phase * 2.0))
 		var title_bg := Color(0.06, 0.06, 0.11, 0.92)
 		draw_rect(Rect2(origin + Vector2(40 * tile, 6 * tile), Vector2(80 * tile, 14 * tile)), title_bg)
@@ -847,30 +845,34 @@ class StallApproachView:
 			draw_rect(Rect2(p_pos - Vector2(1 * tile, 1 * tile), p_size + Vector2(2 * tile, 2 * tile)), Color(0.06, 0.06, 0.11, 0.92))
 			draw_texture_rect(portrait, Rect2(p_pos, p_size), false, Color(1, 1, 1, 1))
 
-		_draw_stall_pot(origin, tile)
-
-		var t: float = clampf(walk_t, 0.0, 1.0)
-		if t < 0.15:
-			t = ease(t / 0.15, 2.0) * 0.15
-		elif t > 0.75:
-			var decel := (t - 0.75) / 0.25
-			t = 0.75 + (1.0 - pow(1.0 - decel, 3.0)) * 0.25
-
-		var x: float = lerpf(-18.0, 52.0, t)
-		var bob: float = absf(sin(t * PI * 4.0)) * 1.2
-		var y: float = 58.0 - bob
-
+		var queue_count := 5
 		if walk_sheet is Texture2D:
 			var fw: int = int(round(float(walk_sheet.get_width()) / float(CHARACTER_SHEET_COLS)))
 			var fh: int = int(round(float(walk_sheet.get_height()) / float(CHARACTER_SHEET_ROWS)))
-			var walk_frame := int(floor(phase * 10.0)) % 4
-			var col := walk_frame % CHARACTER_SHEET_COLS
-			var row := CHARACTER_ROW_RIGHT
-			var src := Rect2(col * fw, row * fh, fw, fh)
-			var dest := Rect2(origin + Vector2(x * tile, (y - float(fh)) * tile), Vector2(fw * tile, fh * tile))
-			draw_texture_rect_region(walk_sheet, dest, src, Color(1, 1, 1, 1))
-			var shadow_alpha := 0.25 + 0.1 * bob
-			draw_rect(Rect2(origin + Vector2((x + 4) * tile, 60 * tile), Vector2(12 * tile, 3 * tile)), Color(0, 0, 0, shadow_alpha))
+			for i in range(queue_count - 1, -1, -1):
+				var delay: float = float(i) * 0.12
+				var t: float = 0.0
+				if walk_t > delay:
+					t = clampf((walk_t - delay) / (1.0 - delay), 0.0, 1.0)
+				if t < 0.15:
+					t = ease(t / 0.15, 2.0) * 0.15
+				elif t > 0.75:
+					var decel := (t - 0.75) / 0.25
+					t = 0.75 + (1.0 - pow(1.0 - decel, 3.0)) * 0.25
+
+				var x: float = lerpf(-10.0 - float(i) * 22.0, 60.0 - float(i) * 18.0, t)
+				var bob: float = absf(sin((t + float(i) * 0.05) * PI * 4.0)) * 1.2
+				var y: float = 58.0 - bob
+
+				var walk_frame := int(floor((phase + float(i) * 0.18) * 10.0)) % 4
+				var col := walk_frame % CHARACTER_SHEET_COLS
+				var row := CHARACTER_ROW_LEFT
+				var src := Rect2(col * fw, row * fh, fw, fh)
+				var dest := Rect2(origin + Vector2(x * tile, (y - float(fh)) * tile), Vector2(fw * tile, fh * tile))
+				var alpha := 1.0 - float(i) * 0.12
+				draw_texture_rect_region(walk_sheet, dest, src, Color(1, 1, 1, alpha))
+				var shadow_alpha := (0.25 + 0.1 * bob) * alpha
+				draw_rect(Rect2(origin + Vector2((x + 4) * tile, 60 * tile), Vector2(12 * tile, 3 * tile)), Color(0, 0, 0, shadow_alpha))
 
 		if walk_t >= 1.0:
 			var st: float = minf((walk_t - 1.0) / 0.4, 1.0)
@@ -901,7 +903,7 @@ class StallApproachView:
 			_draw_boss_glow(origin, tile)
 
 	func _draw_stall(origin: Vector2, tile: int) -> void:
-		var stall_x := 78; var stall_w := 70; var stall_y := 20; var stall_h := 56
+		var stall_x := 86; var stall_w := 70; var stall_y := 20; var stall_h := 56
 		draw_rect(Rect2(origin + Vector2(stall_x * tile, stall_y * tile), Vector2(stall_w * tile, stall_h * tile)), Color(0.12, 0.14, 0.22))
 		for i in range(8):
 			var stripe_x := stall_x + i * 9
@@ -909,7 +911,7 @@ class StallApproachView:
 			draw_rect(Rect2(origin + Vector2(stripe_x * tile, (stall_y - 8) * tile), Vector2(9 * tile, 8 * tile)), stripe_color)
 		var glow := 0.6 + 0.4 * sin(phase * 3.0)
 		draw_rect(Rect2(origin + Vector2((stall_x + 10) * tile, (stall_y - 18) * tile), Vector2(50 * tile, 10 * tile)), Color(0.05, 0.05, 0.12, 0.95))
-		draw_string(get_theme_default_font(), origin + Vector2((stall_x + 14) * tile, (stall_y - 17) * tile), "怪 菜 快 炒", HORIZONTAL_ALIGNMENT_LEFT, 46 * tile, 24, Color(1.0, 0.3, 0.5, glow))
+		draw_string(get_theme_default_font(), origin + Vector2((stall_x + 10) * tile, (stall_y - 17) * tile), "怪 菜 快 炒", HORIZONTAL_ALIGNMENT_CENTER, 50 * tile, 24, Color(1.0, 0.3, 0.5, glow))
 		var menu_y := stall_y + 8
 		draw_rect(Rect2(origin + Vector2((stall_x + 8) * tile, menu_y * tile), Vector2(54 * tile, 22 * tile)), Color(0.06, 0.07, 0.14))
 		for i in range(5):
@@ -922,7 +924,9 @@ class StallApproachView:
 			draw_rect(Rect2(origin + Vector2((stall_x + 2) * tile, (counter_y + 2 + i * 2) * tile), Vector2((stall_w - 4) * tile, 1 * tile)), Color(0.14, 0.10, 0.06))
 
 	func _draw_stall_pot(origin: Vector2, tile: int) -> void:
-		var px := 110; var py := 42; var pw := 22; var ph := 16
+		var px := 118; var py := 42; var pw := 22; var ph := 16
+		draw_rect(Rect2(origin + Vector2((px - 3) * tile, (py + 4) * tile), Vector2(3 * tile, 6 * tile)), Color(0.08, 0.09, 0.14))
+		draw_rect(Rect2(origin + Vector2((px + pw) * tile, (py + 4) * tile), Vector2(3 * tile, 6 * tile)), Color(0.08, 0.09, 0.14))
 		draw_rect(Rect2(origin + Vector2(px * tile, py * tile), Vector2(pw * tile, ph * tile)), Color(0.1, 0.11, 0.16))
 		draw_rect(Rect2(origin + Vector2((px + 2) * tile, (py + 2) * tile), Vector2((pw - 4) * tile, (ph - 4) * tile)), Color(0.5, 0.33, 0.18))
 		for i in range(6):
@@ -941,7 +945,6 @@ class StallApproachView:
 			draw_rect(Rect2(origin + Vector2(i * 20 * tile, floor_y * tile), Vector2(tile, 32 * tile)), Color(0.09, 0.10, 0.18))
 		for j in range(4):
 			draw_rect(Rect2(origin + Vector2(0, (floor_y + j * 8) * tile), Vector2(160 * tile, tile)), Color(0.09, 0.10, 0.18))
-		draw_rect(Rect2(origin + Vector2(78 * tile, floor_y * tile), Vector2(70 * tile, 22 * tile)), Color(1.0, 0.8, 0.4, 0.04))
 
 	func _draw_fairy_lights(origin: Vector2, tile: int) -> void:
 		var light_y := 8
@@ -1382,7 +1385,10 @@ func _start_game() -> void:
 	mistake_insurance_used = false
 	normal_order_pool = _get_orders(false)
 	_pick_next_order()
-	_show_approach_screen()
+	if _should_play_approach_for_order():
+		_show_approach_screen()
+	else:
+		_show_game_screen(true)
 
 func _pick_next_order() -> void:
 	selected_ingredient_ids.clear()
@@ -1409,7 +1415,6 @@ func _pick_next_order() -> void:
 	var desired_tags: Array = current_order.get("desired_tags", [])
 	presented_ingredients = _roll_presented_items(INGREDIENTS, desired_tags, 12, 6)
 	presented_seasonings = _roll_presented_items(SEASONINGS, desired_tags, 10, 4)
-	screen_state = "approach"
 
 func _roll_presented_items(source: Array, desired_tags: Array, total: int, min_relevant: int) -> Array:
 	var relevant: Array = []
@@ -3146,13 +3151,19 @@ func _advance_after_result() -> void:
 		return
 	order_index += 1
 	_pick_next_order()
-	_show_game_screen()
+	if _should_play_approach_for_order():
+		_show_approach_screen()
+	else:
+		_show_game_screen(true)
 
 func _start_next_day() -> void:
 	order_index = 0
 	normal_order_pool = _get_orders(false)
 	_pick_next_order()
-	_show_approach_screen()
+	if _should_play_approach_for_order():
+		_show_approach_screen()
+	else:
+		_show_game_screen(true)
 
 func _choose_buff(buff_id: String) -> void:
 	if buff_id != "" and not active_buffs.has(buff_id):
@@ -3166,7 +3177,15 @@ func _choose_buff(buff_id: String) -> void:
 		return
 	order_index += 1
 	_pick_next_order()
-	_show_approach_screen()
+	if _should_play_approach_for_order():
+		_show_approach_screen()
+	else:
+		_show_game_screen(true)
+
+func _should_play_approach_for_order() -> bool:
+	if bool(current_order.get("boss", false)):
+		return true
+	return int(order_index) % 5 == 0
 
 func _build_evaluation_payload() -> Dictionary:
 	var ingredient_names := _names_for_ids(selected_ingredient_ids, INGREDIENTS)
@@ -4193,7 +4212,7 @@ func _start_dots_animation(label: Label) -> void:
 	var tween := create_tween()
 	tween.set_loops()
 	for _i in range(4):
-		tween.tween_callback(Callable(self, "_advance_dots").bind(label))
+		tween.tween_callback(func(): _advance_dots(label))
 		tween.tween_interval(0.22)
 func _apply_button_default(button: Button) -> void:
 	var normal := StyleBoxFlat.new()
