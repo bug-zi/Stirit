@@ -251,12 +251,56 @@ var method_buttons: Dictionary = {}
 var selected_chips_box: Container
 var status_label: Label
 var cook_button: Button
+var _bg_overlay: TextureRect
+var _bg_offset := Vector2.ZERO
+var _timer_pulsing := false
+var _timer_tween: Tween
+var _cook_breathing := false
+var _cook_breath_tween: Tween
+var _vignette: ColorRect
 var pot_view: PotView
 var funds_label: Label
 var title_label: Label
 var exp_label: Label
 var exp_progress_bar: ProgressBar
 var making_progress_bar: ProgressBar
+
+class SteamParticles:
+	extends Control
+	var parts := []
+	var rng := RandomNumberGenerator.new()
+
+	func _ready() -> void:
+		rng.randomize()
+		set_process(true)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _process(delta: float) -> void:
+		if rng.randf() < 0.3:
+			_spawn()
+		for i in range(parts.size() - 1, -1, -1):
+			parts[i]["y"] -= parts[i]["speed"] * 60.0 * delta
+			parts[i]["life"] -= 0.9 * delta
+			if parts[i]["life"] <= 0.0:
+				parts.remove_at(i)
+		queue_redraw()
+
+	func _spawn() -> void:
+		parts.append({
+			"x": rng.randf_range(0.2, 0.8) * size.x,
+			"y": size.y - 4.0,
+			"speed": rng.randf_range(0.4, 1.2),
+			"life": 1.0,
+			"size": rng.randf_range(2.0, 6.0)
+		})
+		if parts.size() > 30:
+			parts.remove_at(0)
+
+	func _draw() -> void:
+		for p in parts:
+			var alpha := float(p["life"]) * 0.25
+			var s := float(p["size"]) * float(p["life"])
+			draw_circle(Vector2(float(p["x"]), float(p["y"])), s, Color(1, 1, 1, alpha))
 
 class PotView:
 	extends Control
@@ -748,14 +792,16 @@ class StallApproachView:
 	var portrait: Texture2D
 	var customer_name := ""
 	var customer_role := ""
+	var request_text := ""
 	var boss := false
 	var emitted := false
 
-	func setup(sheet: Texture2D, portrait_texture: Texture2D, name_text: String, role_text: String, is_boss: bool) -> void:
+	func setup(sheet: Texture2D, portrait_texture: Texture2D, name_text: String, role_text: String, request_preview: String, is_boss: bool) -> void:
 		walk_sheet = sheet
 		portrait = portrait_texture
 		customer_name = name_text
 		customer_role = role_text
+		request_text = request_preview
 		boss = is_boss
 
 	func _ready() -> void:
@@ -780,12 +826,9 @@ class StallApproachView:
 		origin = Vector2(floor(origin.x), floor(origin.y))
 
 		draw_rect(Rect2(origin, canvas), Color(0.05, 0.05, 0.11))
-		draw_rect(Rect2(origin + Vector2(0, 58 * tile), Vector2(canvas.x, 32 * tile)), Color(0.09, 0.1, 0.18))
+		_draw_floor(origin, tile)
 
-		var stall := Color(0.14, 0.16, 0.26)
-		draw_rect(Rect2(origin + Vector2(78 * tile, 20 * tile), Vector2(70 * tile, 56 * tile)), stall)
-		draw_rect(Rect2(origin + Vector2(78 * tile, 20 * tile), Vector2(70 * tile, 6 * tile)), Color(0.2, 0.22, 0.34))
-		draw_rect(Rect2(origin + Vector2(86 * tile, 28 * tile), Vector2(54 * tile, 22 * tile)), Color(0.08, 0.09, 0.16))
+		_draw_stall(origin, tile)
 
 		var title_alpha: float = clampf(walk_t * 1.15, 0.0, 1.0) * (0.88 + 0.08 * sin(phase * 2.0))
 		var title_bg := Color(0.06, 0.06, 0.11, 0.92)
@@ -799,37 +842,132 @@ class StallApproachView:
 			draw_rect(Rect2(p_pos - Vector2(1 * tile, 1 * tile), p_size + Vector2(2 * tile, 2 * tile)), Color(0.06, 0.06, 0.11, 0.92))
 			draw_texture_rect(portrait, Rect2(p_pos, p_size), false, Color(1, 1, 1, 1))
 
-		var pot_top := Vector2(112 * tile, 44 * tile)
-		draw_rect(Rect2(origin + pot_top, Vector2(22 * tile, 16 * tile)), Color(0.12, 0.13, 0.18))
-		draw_rect(Rect2(origin + pot_top + Vector2(2 * tile, 2 * tile), Vector2(18 * tile, 12 * tile)), Color(0.55, 0.36, 0.16))
-		for i in range(10):
-			var px: int = 114 + i * 2 + int(round(sin(phase * 3.0 + float(i)) * 1.0))
-			var py: int = 46 + int(round(fposmod(phase * 10.0 + float(i) * 3.0, 10.0)))
-			draw_rect(Rect2(origin + Vector2(px * tile, py * tile), Vector2(tile, tile)), Color(1.0, 1.0, 1.0, 0.25))
+		_draw_stall_pot(origin, tile)
 
 		var t: float = clampf(walk_t, 0.0, 1.0)
-		t = 1.0 - pow(1.0 - t, 3.0)
-		var start_x: float = -18.0
-		var end_x: float = 58.0
-		var x: float = lerpf(start_x, end_x, t)
-		var y: float = 58.0 + sin(phase * 12.0) * 0.6
+		if t < 0.15:
+			t = ease(t / 0.15, 2.0) * 0.15
+		elif t > 0.75:
+			var decel := (t - 0.75) / 0.25
+			t = 0.75 + (1.0 - pow(1.0 - decel, 3.0)) * 0.25
+
+		var x: float = lerpf(-18.0, 52.0, t)
+		var bob: float = absf(sin(t * PI * 4.0)) * 1.2
+		var y: float = 58.0 - bob
 
 		if walk_sheet is Texture2D:
-			var fw: int = int(floor(float(walk_sheet.get_width()) / float(CHARACTER_SHEET_COLS)))
-			var fh: int = int(floor(float(walk_sheet.get_height()) / float(CHARACTER_SHEET_ROWS)))
-			var col: int = int(floor(phase * 8.0)) % CHARACTER_SHEET_COLS
-			var row: int = CHARACTER_ROW_BACK
+			var fw: int = int(round(float(walk_sheet.get_width()) / float(CHARACTER_SHEET_COLS)))
+			var fh: int = int(round(float(walk_sheet.get_height()) / float(CHARACTER_SHEET_ROWS)))
+			var walk_frame := int(floor(phase * 10.0)) % 4
+			var col := walk_frame % CHARACTER_SHEET_COLS
+			var row := CHARACTER_ROW_RIGHT
 			var src := Rect2(col * fw, row * fh, fw, fh)
 			var dest := Rect2(origin + Vector2(x * tile, (y - float(fh)) * tile), Vector2(fw * tile, fh * tile))
 			draw_texture_rect_region(walk_sheet, dest, src, Color(1, 1, 1, 1))
-			draw_rect(Rect2(origin + Vector2((x + 6) * tile, (y + 2) * tile), Vector2(10 * tile, 3 * tile)), Color(0.0, 0.0, 0.0, 0.2))
-		else:
-			draw_rect(Rect2(origin + Vector2(x * tile, y * tile), Vector2(16 * tile, 16 * tile)), Color(0.18, 0.2, 0.3))
+			var shadow_alpha := 0.25 + 0.1 * bob
+			draw_rect(Rect2(origin + Vector2((x + 4) * tile, 60 * tile), Vector2(12 * tile, 3 * tile)), Color(0, 0, 0, shadow_alpha))
 
-		var label_col := Color(0.92, 0.95, 1.0, 0.85)
-		draw_rect(Rect2(origin + Vector2(18 * tile, 14 * tile), Vector2(54 * tile, 10 * tile)), Color(0.08, 0.09, 0.16, 0.9))
-		draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), "%s%s" % ["👑 " if boss else "", customer_name], HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 18, label_col)
-		draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 34 * tile), customer_role, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 14, Color(0.78, 0.88, 1.0, 0.7))
+		if walk_t >= 1.0:
+			var st: float = minf((walk_t - 1.0) / 0.4, 1.0)
+			var sb: float = 1.0 + (1.0 - st) * 0.06 * sin(st * PI)
+			var idle_sheet := walk_sheet
+			if idle_sheet is Texture2D:
+				var fw: int = int(round(float(idle_sheet.get_width()) / float(CHARACTER_SHEET_COLS)))
+				var fh: int = int(round(float(idle_sheet.get_height()) / float(CHARACTER_SHEET_ROWS)))
+				var src := Rect2(0, CHARACTER_ROW_FRONT * fh, fw, fh)
+				var dest_size := Vector2(fw * tile, fh * tile) * sb
+				var dest_origin := origin + Vector2((52 + (fw - fw * sb) / 2.0) * tile, (52 - fh * sb) * tile)
+				draw_texture_rect_region(idle_sheet, Rect2(dest_origin, dest_size), src, Color(1, 1, 1, 1))
+
+		if boss:
+			var flicker := 0.7 + 0.3 * sin(phase * 6.0)
+			draw_rect(Rect2(origin + Vector2(18 * tile, 14 * tile), Vector2(54 * tile, 10 * tile)), Color(0.08, 0.09, 0.16, 0.9))
+			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), "BOSS · " + customer_name, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 22, Color(1.0, 0.3, 0.3, flicker))
+			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 34 * tile), customer_role, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 14, Color(0.78, 0.88, 1.0, 0.7))
+		else:
+			var label_col := Color(0.92, 0.95, 1.0, 0.85)
+			draw_rect(Rect2(origin + Vector2(18 * tile, 14 * tile), Vector2(54 * tile, 10 * tile)), Color(0.08, 0.09, 0.16, 0.9))
+			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), customer_name, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 18, label_col)
+			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 34 * tile), customer_role, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 14, Color(0.78, 0.88, 1.0, 0.7))
+
+		_draw_fairy_lights(origin, tile)
+		_draw_thought_fragment(origin, tile)
+		if boss:
+			_draw_boss_glow(origin, tile)
+
+	func _draw_stall(origin: Vector2, tile: int) -> void:
+		var stall_x := 78; var stall_w := 70; var stall_y := 20; var stall_h := 56
+		draw_rect(Rect2(origin + Vector2(stall_x * tile, stall_y * tile), Vector2(stall_w * tile, stall_h * tile)), Color(0.12, 0.14, 0.22))
+		for i in range(8):
+			var stripe_x := stall_x + i * 9
+			var stripe_color := Color(0.85, 0.25, 0.25) if i % 2 == 0 else Color(1.0, 1.0, 1.0)
+			draw_rect(Rect2(origin + Vector2(stripe_x * tile, (stall_y - 8) * tile), Vector2(9 * tile, 8 * tile)), stripe_color)
+		var glow := 0.6 + 0.4 * sin(phase * 3.0)
+		draw_rect(Rect2(origin + Vector2((stall_x + 10) * tile, (stall_y - 18) * tile), Vector2(50 * tile, 10 * tile)), Color(0.05, 0.05, 0.12, 0.95))
+		draw_string(get_theme_default_font(), origin + Vector2((stall_x + 14) * tile, (stall_y - 17) * tile), "怪 菜 快 炒", HORIZONTAL_ALIGNMENT_LEFT, 46 * tile, 24, Color(1.0, 0.3, 0.5, glow))
+		var menu_y := stall_y + 8
+		draw_rect(Rect2(origin + Vector2((stall_x + 8) * tile, menu_y * tile), Vector2(54 * tile, 22 * tile)), Color(0.06, 0.07, 0.14))
+		for i in range(5):
+			var line_y := menu_y + 2 + i * 4
+			var line_w := 30 + int(sin(float(i) * 1.7) * 10)
+			draw_rect(Rect2(origin + Vector2((stall_x + 12) * tile, line_y * tile), Vector2(line_w * tile, 2 * tile)), Color(0.15, 0.18, 0.26))
+		var counter_y := stall_y + stall_h - 10
+		draw_rect(Rect2(origin + Vector2(stall_x * tile, counter_y * tile), Vector2(stall_w * tile, 10 * tile)), Color(0.18, 0.12, 0.08))
+		for i in range(4):
+			draw_rect(Rect2(origin + Vector2((stall_x + 2) * tile, (counter_y + 2 + i * 2) * tile), Vector2((stall_w - 4) * tile, 1 * tile)), Color(0.14, 0.10, 0.06))
+
+	func _draw_stall_pot(origin: Vector2, tile: int) -> void:
+		var px := 110; var py := 42; var pw := 22; var ph := 16
+		draw_rect(Rect2(origin + Vector2(px * tile, py * tile), Vector2(pw * tile, ph * tile)), Color(0.1, 0.11, 0.16))
+		draw_rect(Rect2(origin + Vector2((px + 2) * tile, (py + 2) * tile), Vector2((pw - 4) * tile, (ph - 4) * tile)), Color(0.5, 0.33, 0.18))
+		for i in range(6):
+			var bx := px + 4 + i * 3 + int(sin(phase * 4.0 + i) * 1.5)
+			var by := py + 4 + int(fposmod(phase * 8.0 + i * 3.0, 8.0))
+			draw_rect(Rect2(origin + Vector2(bx * tile, by * tile), Vector2(tile, tile)), Color(1.0, 1.0, 1.0, 0.3))
+		for i in range(4):
+			var sx := px + 4 + i * 5
+			var sy := py - 2 - int(fposmod(phase * 12.0 + i * 4.0, 10.0))
+			draw_rect(Rect2(origin + Vector2(sx * tile, sy * tile), Vector2(3 * tile, 6 * tile)), Color(0.9, 0.95, 1.0, 0.2))
+
+	func _draw_floor(origin: Vector2, tile: int) -> void:
+		var floor_y := 58
+		draw_rect(Rect2(origin + Vector2(0, floor_y * tile), Vector2(160 * tile, 32 * tile)), Color(0.06, 0.07, 0.14))
+		for i in range(8):
+			draw_rect(Rect2(origin + Vector2(i * 20 * tile, floor_y * tile), Vector2(tile, 32 * tile)), Color(0.09, 0.10, 0.18))
+		for j in range(4):
+			draw_rect(Rect2(origin + Vector2(0, (floor_y + j * 8) * tile), Vector2(160 * tile, tile)), Color(0.09, 0.10, 0.18))
+		draw_rect(Rect2(origin + Vector2(78 * tile, floor_y * tile), Vector2(70 * tile, 22 * tile)), Color(1.0, 0.8, 0.4, 0.04))
+
+	func _draw_fairy_lights(origin: Vector2, tile: int) -> void:
+		var light_y := 8
+		var colors: Array[Color] = [COLOR_PRIMARY, COLOR_SECONDARY, COLOR_ACCENT, COLOR_FOOD]
+		for i in range(13):
+			var lx := i * 12 + 6
+			var flicker := 0.5 + 0.5 * sin(phase * (4.0 + i * 0.7) + i * 1.3)
+			var c: Color = colors[i % colors.size()]
+			draw_circle(origin + Vector2(lx * tile, light_y * tile), 2 * tile, Color(c.r, c.g, c.b, 0.4 + flicker * 0.5))
+			draw_circle(origin + Vector2(lx * tile, light_y * tile), 5 * tile, Color(c.r, c.g, c.b, 0.06 + flicker * 0.05))
+			draw_line(origin + Vector2(lx * tile, (light_y + 2) * tile), origin + Vector2(lx * tile, (light_y + 12) * tile), Color(c.r, c.g, c.b, 0.10), 1)
+
+	func _draw_thought_fragment(origin: Vector2, tile: int) -> void:
+		if walk_t < 0.5:
+			return
+		var ft := (walk_t - 0.5) / 0.5
+		var fa := clampf(ft * ft, 0.0, 0.7)
+		var bx := 50; var by := 34 - ft * 8
+		draw_rect(Rect2(origin + Vector2(bx * tile, by * tile), Vector2(40 * tile, 14 * tile)), Color(0.08, 0.09, 0.16, fa))
+		var preview_text := str(request_text).substr(0, 10) + "…"
+		draw_string(get_theme_default_font(), origin + Vector2((bx + 2) * tile, (by + 2) * tile), preview_text, HORIZONTAL_ALIGNMENT_LEFT, 36 * tile, 14, Color(0.9, 0.95, 1.0, fa))
+
+	func _draw_boss_glow(origin: Vector2, tile: int) -> void:
+		var glow := 0.06 + 0.04 * sin(phase * 2.5)
+		var gc := Color(1.0, 0.15, 0.15, glow)
+		for i in range(4):
+			var m := i * 2
+			draw_rect(Rect2(origin + Vector2(m * tile, m * tile), Vector2((160 - m * 2) * tile, tile)), gc)
+			draw_rect(Rect2(origin + Vector2(m * tile, (90 - m) * tile), Vector2((160 - m * 2) * tile, tile)), gc)
+			draw_rect(Rect2(origin + Vector2(m * tile, m * tile), Vector2(tile, (90 - m * 2) * tile)), gc)
+			draw_rect(Rect2(origin + Vector2((160 - m) * tile, m * tile), Vector2(tile, (90 - m * 2) * tile)), gc)
 
 func _ensure_item_icons_on_disk() -> void:
 	var dir_abs := ProjectSettings.globalize_path(ITEM_ICON_DIR)
@@ -905,6 +1043,8 @@ func _process(delta: float) -> void:
 		_submit_dish(true)
 		return
 	_update_timer_label()
+	_update_vignette()
+	_process_bg_movement(delta)
 
 func _show_start_screen() -> void:
 	screen_state = "start"
@@ -1332,12 +1472,14 @@ func _show_approach_screen() -> void:
 	var view := StallApproachView.new()
 	view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	view.setup(walk_sheet, portrait, str(current_order.get("customer_name", "")), str(current_order.get("role", "")), bool(current_order.get("boss", false)))
+	view.setup(walk_sheet, portrait, str(current_order.get("customer_name", "")), str(current_order.get("role", "")), str(current_order.get("request", "")), bool(current_order.get("boss", false)))
 	view.finished.connect(_on_approach_finished)
 	page.add_child(view)
 
 func _on_approach_finished() -> void:
-	_show_game_screen(true)
+	var hold := create_tween()
+	hold.tween_interval(0.3)
+	hold.tween_callback(func(): _show_game_screen(true))
 
 func _show_game_screen(animate_in: bool = false) -> void:
 	screen_state = "playing"
@@ -1670,7 +1812,18 @@ func _build_pot_panel_center() -> Control:
 	pot_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pot_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	pot_view.icon_provider = Callable(self, "_get_item_icon")
-	box.add_child(pot_view)
+	var pot_layer := Control.new()
+	pot_layer.custom_minimum_size = pot_view.custom_minimum_size
+	pot_layer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pot_layer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(pot_layer)
+
+	pot_view.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pot_layer.add_child(pot_view)
+
+	var steam_particles := SteamParticles.new()
+	steam_particles.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pot_layer.add_child(steam_particles)
 
 	status_label = _make_label("", 16, COLOR_TEXT_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1798,6 +1951,20 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 		button.toggled.connect(_on_toggle_ingredient.bind(str(item["id"])))
 	else:
 		button.toggled.connect(_on_toggle_seasoning.bind(str(item["id"])))
+	button.mouse_entered.connect(func():
+		if not button.has_meta("hover_base_y"):
+			button.set_meta("hover_base_y", button.position.y)
+		var base_y: float = float(button.get_meta("hover_base_y"))
+		var t := button.create_tween()
+		t.tween_property(button, "position:y", base_y - 2.0, 0.1)
+	)
+	button.mouse_exited.connect(func():
+		if not button.has_meta("hover_base_y"):
+			button.set_meta("hover_base_y", button.position.y)
+		var base_y: float = float(button.get_meta("hover_base_y"))
+		var t := button.create_tween()
+		t.tween_property(button, "position:y", base_y, 0.1)
+	)
 	return button
 
 func _price_for_item(item: Dictionary, kind: String) -> int:
@@ -1833,6 +2000,20 @@ func _make_method_button(method: Dictionary, group: ButtonGroup) -> Button:
 	row.add_child(_make_label(str(method["name"]), 22, COLOR_TEXT))
 
 	button.toggled.connect(_on_toggle_method.bind(str(method["id"])))
+	button.mouse_entered.connect(func():
+		if not button.has_meta("hover_base_y"):
+			button.set_meta("hover_base_y", button.position.y)
+		var base_y: float = float(button.get_meta("hover_base_y"))
+		var t := button.create_tween()
+		t.tween_property(button, "position:y", base_y - 2.0, 0.1)
+	)
+	button.mouse_exited.connect(func():
+		if not button.has_meta("hover_base_y"):
+			button.set_meta("hover_base_y", button.position.y)
+		var base_y: float = float(button.get_meta("hover_base_y"))
+		var t := button.create_tween()
+		t.tween_property(button, "position:y", base_y, 0.1)
+	)
 	return button
 
 func _refresh_playing_ui() -> void:
@@ -1907,6 +2088,12 @@ func _refresh_playing_ui() -> void:
 		_apply_button_accent(cook_button, COLOR_SECONDARY if _is_selection_valid() else COLOR_PRIMARY)
 
 	_update_timer_label()
+	if _is_selection_valid() and not _cook_breathing:
+		_start_cook_breath()
+	elif not _is_selection_valid() and _cook_breathing:
+		_stop_cook_breath()
+	if is_instance_valid(customer_avatar_rect):
+		_start_avatar_idle()
 
 func _rebuild_selected_chips() -> void:
 	if not is_instance_valid(selected_chips_box):
@@ -2107,6 +2294,7 @@ func _show_result_screen(result: Dictionary) -> void:
 	var coins_gain := _make_label("报酬 +0", 28, Color(0.94, 0.96, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
 	coins_gain.modulate = Color(1, 1, 1, 0)
 	left_box.add_child(coins_gain)
+	coins_label = coins_gain
 
 	var source_notice := _make_label(str(result["source_notice"]), 17, Color(0.7, 0.78, 0.88), HORIZONTAL_ALIGNMENT_CENTER)
 	source_notice.modulate = Color(1, 1, 1, 0)
@@ -2203,7 +2391,7 @@ func _show_result_screen(result: Dictionary) -> void:
 	tween.tween_property(coins_gain, "modulate:a", 1.0, 0.12)
 	tween.tween_callback(Callable(self, "_play_sfx").bind("coin"))
 	tween.tween_method(Callable(self, "_set_number_label").bind(coins_gain, "报酬 +%d"), 0.0, float(target_coins), 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_callback(Callable(self, "_punch_scale").bind(coins_gain, Vector2(0.92, 1.2), 0.2))
+	tween.tween_callback(Callable(self, "_coin_bounce"))
 
 	tween.tween_property(next_button, "modulate:a", 1.0, 0.25)
 	tween.tween_callback(Callable(next_button, "set_disabled").bind(false))
@@ -2235,7 +2423,7 @@ func _show_summary_screen() -> void:
 		average = int(round(float(total_score) / float(round_results.size())))
 	var best := _get_best_result()
 	box.add_child(_make_label("第 %d 天日结" % day_index, 42, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_CENTER))
-	box.add_child(_make_label(_get_final_title(average), 30, Color(0.82, 1.0, 0.82), HORIZONTAL_ALIGNMENT_CENTER))
+	box.add_child(_typewriter_label(_get_final_title(average), 30, Color(0.82, 1.0, 0.82), HORIZONTAL_ALIGNMENT_CENTER))
 	box.add_child(_make_label("总分 %d   平均分 %d   资金 %d   经验 %d" % [total_score, average, current_funds, total_exp], 24, Color(0.92, 0.95, 1.0), HORIZONTAL_ALIGNMENT_CENTER))
 	box.add_child(_make_label("头衔：%s Lv.%d   累计报酬 %d" % [player_title, player_level, total_coins], 22, Color(0.82, 1.0, 0.82), HORIZONTAL_ALIGNMENT_CENTER))
 	box.add_child(_make_label("最高单：%s / %d 分" % [best.get("dish_name", "暂无"), best.get("total_score", 0)], 22, Color(0.93, 0.88, 0.72), HORIZONTAL_ALIGNMENT_CENTER))
@@ -3557,20 +3745,56 @@ func _update_timer_label() -> void:
 		return
 	var seconds := int(ceil(time_left))
 	timer_label.text = "%02d" % seconds
+	var urgency := clampf(1.0 - time_left / ROUND_SECONDS, 0.0, 1.0)
 	if seconds <= 10:
-		timer_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.28))
+		timer_label.add_theme_color_override("font_color", Color.RED)
+		if not _timer_pulsing:
+			_start_timer_pulse()
 		if last_countdown_sfx_second != seconds:
 			last_countdown_sfx_second = seconds
 			_play_sfx("countdown")
 	else:
-		timer_label.add_theme_color_override("font_color", Color(0.8, 1.0, 0.82))
+		timer_label.add_theme_color_override("font_color", Color.GREEN.lerp(Color.YELLOW, urgency * 1.5))
+		_stop_timer_pulse()
 		last_countdown_sfx_second = -1
+
+func _start_timer_pulse() -> void:
+	if _timer_pulsing:
+		return
+	_timer_pulsing = true
+	if not is_instance_valid(timer_label):
+		return
+	_timer_tween = timer_label.create_tween()
+	_timer_tween.set_loops()
+	_timer_tween.tween_property(timer_label, "scale", Vector2(1.15, 1.15), 0.35)
+	_timer_tween.tween_property(timer_label, "scale", Vector2(1.0, 1.0), 0.35)
+
+func _stop_timer_pulse() -> void:
+	_timer_pulsing = false
+	if is_instance_valid(_timer_tween):
+		_timer_tween.kill()
+	if is_instance_valid(timer_label):
+		timer_label.scale = Vector2.ONE
 
 func _make_page() -> MarginContainer:
 	var background := ColorRect.new()
 	background.color = COLOR_BG
 	background.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
+
+	if not is_instance_valid(_bg_overlay):
+		var bg_tex := _get_bg_texture()
+		_bg_overlay = TextureRect.new()
+		_bg_overlay.texture = bg_tex
+		_bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_bg_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_bg_overlay.stretch_mode = TextureRect.STRETCH_TILE
+		_bg_overlay.modulate = Color(1, 1, 1, 0.12)
+		_bg_overlay.offset_left = -64
+		_bg_overlay.offset_top = -64
+		_bg_overlay.offset_right = 64
+		_bg_overlay.offset_bottom = 64
+	add_child(_bg_overlay)
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -3580,6 +3804,98 @@ func _make_page() -> MarginContainer:
 	margin.add_theme_constant_override("margin_bottom", 18)
 	add_child(margin)
 	return margin
+
+var _bg_texture_cache: Texture2D
+
+func _get_bg_texture() -> Texture2D:
+	if _bg_texture_cache:
+		return _bg_texture_cache
+	var s := 64
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for _i in range(200):
+		var x := rng.randi() % s
+		var y := rng.randi() % s
+		img.set_pixel(x, y, Color(1, 1, 1, rng.randf_range(0.02, 0.06)))
+	for i in range(s >> 3):
+		var y := i * 8 + 4
+		for x in range(s):
+			img.set_pixel(x, y, Color(1, 1, 1, rng.randf_range(0.01, 0.04)))
+	_bg_texture_cache = ImageTexture.create_from_image(img)
+	return _bg_texture_cache
+
+func _process_bg_movement(delta: float) -> void:
+	if not is_instance_valid(_bg_overlay):
+		return
+	_bg_offset.x = fposmod(_bg_offset.x + delta * 2.0, 64.0)
+	_bg_offset.y = fposmod(_bg_offset.y + delta * 1.2, 64.0)
+	_bg_overlay.offset_left = -64 - _bg_offset.x
+	_bg_overlay.offset_top = -64 - _bg_offset.y
+	_bg_overlay.offset_right = 64 - _bg_offset.x
+	_bg_overlay.offset_bottom = 64 - _bg_offset.y
+
+func _start_cook_breath() -> void:
+	_cook_breathing = true
+	if not is_instance_valid(cook_button):
+		return
+	_cook_breath_tween = cook_button.create_tween()
+	_cook_breath_tween.set_loops()
+	_cook_breath_tween.tween_property(cook_button, "modulate", Color(1.0, 0.88, 0.3), 0.8)
+	_cook_breath_tween.tween_property(cook_button, "modulate", Color(1.0, 0.6, 0.15), 0.8)
+
+func _stop_cook_breath() -> void:
+	_cook_breathing = false
+	if is_instance_valid(_cook_breath_tween):
+		_cook_breath_tween.kill()
+	if is_instance_valid(cook_button):
+		cook_button.modulate = Color.WHITE
+
+func _update_vignette() -> void:
+	var u := clampf(1.0 - time_left / 5.0, 0.0, 1.0)
+	if u > 0.0 and screen_state == "playing":
+		if not is_instance_valid(_vignette):
+			_vignette = ColorRect.new()
+			_vignette.color = Color(0, 0, 0, 0)
+			_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+			_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(_vignette)
+		_vignette.color = Color(0, 0, 0, u * 0.4)
+	elif is_instance_valid(_vignette):
+		_vignette.color = Color(0, 0, 0, 0)
+
+func _start_avatar_idle() -> void:
+	if not is_instance_valid(customer_avatar_rect):
+		return
+	if customer_avatar_rect.has_meta("avatar_idle_started") and bool(customer_avatar_rect.get_meta("avatar_idle_started")):
+		return
+	customer_avatar_rect.set_meta("avatar_idle_started", true)
+	var base_y := customer_avatar_rect.position.y
+	var t := customer_avatar_rect.create_tween()
+	t.set_loops()
+	t.tween_property(customer_avatar_rect, "position:y", base_y - 4.0, 1.2).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(customer_avatar_rect, "position:y", base_y + 4.0, 1.2).set_ease(Tween.EASE_IN_OUT)
+
+func _coin_bounce() -> void:
+	if not is_instance_valid(coins_label):
+		return
+	coins_label.add_theme_color_override("font_color", COLOR_SECONDARY)
+	var t := coins_label.create_tween()
+	t.tween_property(coins_label, "scale", Vector2(1.3, 1.3), 0.15)
+	t.tween_property(coins_label, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT)
+	t.tween_callback(func():
+		if is_instance_valid(coins_label):
+			coins_label.add_theme_color_override("font_color", COLOR_TEXT)
+	)
+
+func _typewriter_label(text: String, font_size: int, color: Color, align := HORIZONTAL_ALIGNMENT_CENTER) -> Label:
+	var label := _make_label("", font_size, color, align)
+	label.name = "TitleTypewriter"
+	var t := label.create_tween()
+	for i in range(text.length()):
+		var idx := i
+		t.tween_callback(func(): label.text = text.substr(0, idx + 1))
+		t.tween_interval(0.06)
+	return label
 
 func _make_panel(bg_color: Color = Color(0.09, 0.09, 0.18), border_color: Color = Color(0.24, 0.27, 0.4), corner_radius: int = 12) -> PanelContainer:
 	var panel := PanelContainer.new()
