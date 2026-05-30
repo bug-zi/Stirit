@@ -63,6 +63,10 @@ const COLOR_TEXT_MUTED := Color("#8888aa")
 
 const CHARACTER_SHEET_COLS := 4
 const CHARACTER_SHEET_ROWS := 4
+const CUSTOMER_IDLE_SHEET_COLS := 5
+const CUSTOMER_IDLE_SHEET_ROWS := 4
+const CUSTOMER_PORTRAIT_COL := 0
+const CUSTOMER_PORTRAIT_ROW := 1
 const CHARACTER_IDLE_SHEETS := [
 	"res://assets/characters/pixel_character_1/Idle/Blue_Head_Idle-Sheet.png",
 	"res://assets/characters/pixel_character_1/Idle/Orange_Head_Idle-Sheet.png",
@@ -4367,19 +4371,19 @@ func _get_customer_portrait_index(i: int) -> Texture2D:
 	var sheet := _get_customer_idle_sheet_index(i)
 	if not (sheet is Texture2D):
 		return _get_icon("avatar_customer_%d" % i, 128, COLOR_ACCENT, COLOR_PRIMARY)
-	var fw: int = int(floor(float(sheet.get_width()) / float(CHARACTER_SHEET_COLS)))
-	var fh: int = int(floor(float(sheet.get_height()) / float(CHARACTER_SHEET_ROWS)))
+	var fw: int = int(floor(float(sheet.get_width()) / float(CUSTOMER_IDLE_SHEET_COLS)))
+	var fh: int = int(floor(float(sheet.get_height()) / float(CUSTOMER_IDLE_SHEET_ROWS)))
 	var atlas := AtlasTexture.new()
 	atlas.atlas = sheet
-	atlas.region = Rect2i(0, CHARACTER_ROW_FRONT * fh, fw, fh)
+	atlas.region = Rect2i(CUSTOMER_PORTRAIT_COL * fw, CUSTOMER_PORTRAIT_ROW * fh, fw, fh)
 	return atlas
 
 func _get_customer_body_index(i: int) -> Texture2D:
 	var sheet := _get_customer_idle_sheet_index(i)
 	if not (sheet is Texture2D):
 		return _get_icon("avatar_customer_body_%d" % i, 256, COLOR_ACCENT, COLOR_PRIMARY)
-	var fw: int = int(floor(float(sheet.get_width()) / float(CHARACTER_SHEET_COLS)))
-	var fh: int = int(floor(float(sheet.get_height()) / float(CHARACTER_SHEET_ROWS)))
+	var fw: int = int(floor(float(sheet.get_width()) / float(CUSTOMER_IDLE_SHEET_COLS)))
+	var fh: int = int(floor(float(sheet.get_height()) / float(CUSTOMER_IDLE_SHEET_ROWS)))
 	var atlas := AtlasTexture.new()
 	atlas.atlas = sheet
 	atlas.region = Rect2i(0, CHARACTER_ROW_FRONT * fh, fw, fh)
@@ -4397,11 +4401,11 @@ func _get_customer_portrait(key: String) -> Texture2D:
 	var sheet := _get_customer_idle_sheet(key)
 	if not (sheet is Texture2D):
 		return _get_icon("avatar_%s" % key, 128, COLOR_ACCENT, COLOR_PRIMARY)
-	var fw: int = int(floor(float(sheet.get_width()) / float(CHARACTER_SHEET_COLS)))
-	var fh: int = int(floor(float(sheet.get_height()) / float(CHARACTER_SHEET_ROWS)))
+	var fw: int = int(floor(float(sheet.get_width()) / float(CUSTOMER_IDLE_SHEET_COLS)))
+	var fh: int = int(floor(float(sheet.get_height()) / float(CUSTOMER_IDLE_SHEET_ROWS)))
 	var atlas := AtlasTexture.new()
 	atlas.atlas = sheet
-	atlas.region = Rect2i(0, CHARACTER_ROW_FRONT * fh, fw, fh)
+	atlas.region = Rect2i(CUSTOMER_PORTRAIT_COL * fw, CUSTOMER_PORTRAIT_ROW * fh, fw, fh)
 	return atlas
 
 func _icon_rect(image: Image, ox: int, oy: int, x: int, y: int, w: int, h: int, pixel_scale: int, color: Color) -> void:
