@@ -2,9 +2,9 @@
 
 ## Runtime Input
 
-局内只在玩家点击出锅或倒计时结束时调用 AI。订单不在局内生成。
+局内只在玩家点击出锅或 100 秒倒计时结束时调用 AI。订单不在局内生成。
 
-玩家选择的任意合法组合都必须先生成一个本地 `FinalDish`，再进入 AI 评价。这样即使 AI 不可用，游戏也能展示“最终菜品”并完成结算。
+玩家选择的任意合法组合都会汇总为评价 payload，再进入 AI 评价。这样即使 AI 不可用，游戏也能用本地评价生成菜名、评分和结算结果。
 
 ## FinalDish Generation
 
@@ -141,7 +141,7 @@ AI 必须返回单个 JSON 对象，字段和类型固定：
 - `scores` 必须包含 `relevance`、`taste`、`emotion`、`risk` 四项。
 - 所有分数必须是 0 到 100 的整数。
 - 分数是小数时四舍五入；越界时 clamp 到 0 或 100。
-- `grade` 必须是 `S`、`A`、`B`、`C`、`D`、`F`。
+- `grade` 必须是 `S`、`A`、`B`、`C`、`D`、`F`；当前实现会用游戏代码根据四维评分重新计算最终评级。
 - 文本字段不能为空。
 - `comment` 建议 12 到 60 个中文字。
 - `customer_reaction` 建议 8 到 50 个中文字。
@@ -149,7 +149,7 @@ AI 必须返回单个 JSON 对象，字段和类型固定：
 
 ## Timeout And Failure
 
-- AI 请求超时时间：6 秒。
+- AI 请求超时时间：20 秒。
 - 超时后立刻使用本地备用评分。
 - 不重试，避免阻塞每单节奏。
 - UI 可显示：`点单系统短路，启用本地评分`。
@@ -185,14 +185,10 @@ AI 成功和兜底都返回同一种结构。
 }
 ```
 
-`source` 取值：
+当前实现不单独暴露 `source` 枚举，而是在结果页显示来源提示：
 
-- `ai`
-- `fallback_timeout`
-- `fallback_invalid_json`
-- `fallback_schema`
-- `fallback_safety`
-- `fallback_offline`
+- `小炒 AI-7 已完成评价。`
+- `点单系统短路，启用本地评分。`
 
 ## Fallback Scoring
 
@@ -203,45 +199,47 @@ desired_hit = matched_desired_tags 数量
 avoid_hit = matched_avoid_tags 数量
 desired_total = max(desired_tags 数量, 1)
 
-relevance = clamp(45 + desired_hit / desired_total * 45 - avoid_hit * 12 + difficulty * 2, 0, 100)
+relevance = clamp(round(38 + desired_hit / desired_total * 58 - avoid_hit * 9), 0, 100)
 ```
 
 美味度 MVP 规则：
 
-- 选择中含 `稳定`、`家常`、`百搭`、`饱腹` 任一标签，taste +10。
-- 强冲击标签 `刺激`、`上头`、`苦`、`清凉`、`重口` 超过 2 个，taste -8。
-- 同时出现 `甜`、`辣/刺激`、`苦`、`清凉` 中 3 类以上，taste -12。
-- `method_deep_fry` taste +8，risk +14。
-- `method_slow_stew` taste +5，risk -8。
+- 初始 taste 为 54。
+- 每命中 `饱腹`、`稳定`、`基础`、`可靠`、`家常`、`温和`、`甜`、`安慰` 中任一标签，taste +5。
+- 每命中 `冲击`、`争议`、`幻觉`、`重口`、`痛感`、`苦` 中任一标签，taste -4。
+- `甜`、`辣/刺激`、`苦`、`清凉`、`油腻`、`重口` 中出现 4 类及以上，taste -12。
 
 情绪命中：
 
 ```text
-emotion = clamp(40 + desired_hit * 12 - avoid_hit * 8 + mood_bonus, 0, 100)
+emotion = clamp(round(34 + desired_hit / desired_total * 48 + request_keyword_hit * 5 - avoid_hit * 5), 0, 100)
 ```
 
-`mood_bonus`：
-
-- 如果订单需要 `冒险`、`刺激`、`罪恶`、`奇怪`、`焦虑`、`夜市`，且菜品有对应高风险标签，+8 到 +12。
-- 如果订单需要 `温暖`、`安慰`、`治愈`、`家常`，且菜品风险较低，+6 到 +10。
+`request_keyword_hit` 为菜品标签直接出现在顾客需求文本中的次数。
 
 风险值：
 
 ```text
-risk = clamp(20 + high_impact_tag_count * 10 + avoid_hit * 10 + method_risk, 0, 100)
+risk = clamp(26 + difficulty * 5 + risk_tag_hit * 7 - calm_tag_hit * 3, 0, 100)
 ```
 
-高风险标签包括：
+风险标签包括：
 
 ```json
-["刺激", "上头", "重口", "冒险", "争议", "罪恶", "混乱", "油炸", "奇怪"]
+["刺激", "风险", "痛感", "上头", "争议", "冲击", "冒险", "罪恶", "幻觉", "负担", "混乱"]
+```
+
+降风险标签包括：
+
+```json
+["稳定", "温和", "柔和", "克制", "清爽", "可靠"]
 ```
 
 总分由游戏代码计算：
 
 ```text
-risk_adjust = 订单 desired_tags 包含冒险/刺激/罪恶/奇怪/焦虑/夜市 ? risk * 0.08 : -risk * 0.12
-overall = clamp(relevance * 0.35 + taste * 0.25 + emotion * 0.30 + risk_adjust, 0, 100)
+risk_balance = 100 - abs(risk - 55)
+overall = clamp(round(relevance * 0.4 + taste * 0.2 + emotion * 0.3 + risk_balance * 0.1), 0, 100)
 ```
 
 等级：
