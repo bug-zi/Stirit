@@ -379,12 +379,36 @@ class PotView:
 	var method_id := ""
 	var phase := 0.0
 	var icon_provider: Callable
+	var drop_receiver: Callable
 	var item_meta: Dictionary = {}
 	var add_events: Array = []
 
 	func _ready() -> void:
 		set_process(true)
 		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+		if typeof(data) != TYPE_DICTIONARY:
+			return false
+		var d: Dictionary = data
+		if not d.has("kind") or not d.has("id"):
+			return false
+		var kind := str(d.get("kind", ""))
+		if kind != "ingredient" and kind != "seasoning":
+			return false
+		return drop_receiver.is_valid()
+
+	func _drop_data(_at_position: Vector2, data: Variant) -> void:
+		if typeof(data) != TYPE_DICTIONARY:
+			return
+		var d: Dictionary = data
+		var kind := str(d.get("kind", ""))
+		var id := str(d.get("id", ""))
+		if kind == "" or id == "":
+			return
+		if drop_receiver.is_valid():
+			drop_receiver.call(kind, id)
 
 	func set_state(new_ingredient_ids: Array, new_seasoning_ids: Array, new_method_id: String) -> void:
 		for old_id in ingredient_ids:
@@ -1933,6 +1957,7 @@ func _build_pot_panel_center() -> Control:
 	pot_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pot_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	pot_view.icon_provider = Callable(self, "_get_item_icon")
+	pot_view.drop_receiver = Callable(self, "_on_pot_drop")
 	var pot_layer := Control.new()
 	pot_layer.custom_minimum_size = pot_view.custom_minimum_size
 	pot_layer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1944,6 +1969,7 @@ func _build_pot_panel_center() -> Control:
 
 	var steam_particles := SteamParticles.new()
 	steam_particles.set_anchors_preset(Control.PRESET_FULL_RECT)
+	steam_particles.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pot_layer.add_child(steam_particles)
 
 	status_label = _make_label("", 16, COLOR_TEXT_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
@@ -1955,6 +1981,21 @@ func _build_pot_panel_center() -> Control:
 	box.add_child(economy_label)
 
 	return panel
+
+func _on_pot_drop(kind: String, item_id: String) -> void:
+	var id := str(item_id)
+	if kind == "ingredient":
+		if ingredient_buttons.has(id):
+			var b = ingredient_buttons[id]
+			if b is Button:
+				(b as Button).set_pressed_no_signal(true)
+		_on_toggle_ingredient(true, id)
+	elif kind == "seasoning":
+		if seasoning_buttons.has(id):
+			var b = seasoning_buttons[id]
+			if b is Button:
+				(b as Button).set_pressed_no_signal(true)
+		_on_toggle_seasoning(true, id)
 
 func _build_library_panel_right() -> Control:
 	var panel := _make_panel(Color(0.14, 0.145, 0.23), Color(0.34, 0.38, 0.54), 12)
@@ -2044,10 +2085,15 @@ func _build_bottom_bar() -> Control:
 	return panel
 
 func _make_library_item_button(item: Dictionary, kind: String) -> Button:
-	var button := _make_button("", 16)
+	var button := DraggableLibraryButton.new()
+	button.add_theme_font_size_override("font_size", 16)
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_apply_button_default(button)
 	button.toggle_mode = true
 	button.custom_minimum_size = Vector2(0, 56)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.drag_kind = kind
+	button.drag_id = str(item["id"])
 
 	var row := HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -2064,6 +2110,7 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 	var icon_size := 30
 	var icon := TextureRect.new()
 	icon.texture = _get_item_icon(kind, str(item["id"]), icon_size)
+	button.drag_icon = icon.texture
 	icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -2072,6 +2119,7 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 	row.add_child(icon)
 
 	var name_label := _make_label(str(item["name"]), 16, COLOR_TEXT)
+	button.drag_title = str(item["name"])
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -2080,6 +2128,7 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 
 	if kind == "ingredient" or kind == "seasoning":
 		var price := _price_for_item(item, kind)
+		button.drag_price = "￥%d" % price
 		var price_label := _make_label("￥%d" % price, 15, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_RIGHT)
 		price_label.custom_minimum_size = Vector2(44, 0)
 		price_label.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -4309,6 +4358,62 @@ func _get_bg_texture() -> Texture2D:
 			img.set_pixel(x, y, Color(1, 1, 1, rng.randf_range(0.01, 0.04)))
 	_bg_texture_cache = ImageTexture.create_from_image(img)
 	return _bg_texture_cache
+
+class DraggableLibraryButton:
+	extends Button
+	var drag_kind := ""
+	var drag_id := ""
+	var drag_icon: Texture2D
+	var drag_title := ""
+	var drag_price := ""
+
+	func _get_drag_data(_at_position: Vector2) -> Variant:
+		var preview := PanelContainer.new()
+		preview.custom_minimum_size = Vector2(220, 52)
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.08, 0.09, 0.16, 0.92)
+		style.border_color = Color(0.52, 0.56, 0.78, 0.9)
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.corner_radius_top_left = 12
+		style.corner_radius_top_right = 12
+		style.corner_radius_bottom_left = 12
+		style.corner_radius_bottom_right = 12
+		preview.add_theme_stylebox_override("panel", style)
+
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		row.offset_left = 10
+		row.offset_top = 8
+		row.offset_right = -10
+		row.offset_bottom = -8
+		row.set_anchors_preset(Control.PRESET_FULL_RECT)
+		preview.add_child(row)
+
+		if drag_icon is Texture2D:
+			var icon_rect := TextureRect.new()
+			icon_rect.texture = drag_icon
+			icon_rect.custom_minimum_size = Vector2(34, 34)
+			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			row.add_child(icon_rect)
+
+		var label := Label.new()
+		var txt := drag_title
+		if drag_price != "":
+			txt = "%s %s" % [txt, drag_price]
+		label.text = txt
+		label.add_theme_font_size_override("font_size", 18)
+		label.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.clip_text = true
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(label)
+
+		set_drag_preview(preview)
+		return {"kind": drag_kind, "id": drag_id}
 
 func _process_bg_movement(delta: float) -> void:
 	if not is_instance_valid(_bg_overlay):
