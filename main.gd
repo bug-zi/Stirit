@@ -65,8 +65,10 @@ const CHARACTER_SHEET_COLS := 4
 const CHARACTER_SHEET_ROWS := 4
 const CUSTOMER_IDLE_SHEET_COLS := 5
 const CUSTOMER_IDLE_SHEET_ROWS := 4
-const CUSTOMER_PORTRAIT_COL := 4
-const CUSTOMER_PORTRAIT_ROW := 3
+const CUSTOMER_PORTRAIT_COL := 0
+const CUSTOMER_PORTRAIT_ROW := 1
+const CUSTOMER_BODY_COL := 4
+const CUSTOMER_BODY_ROW := 3
 const CHARACTER_IDLE_SHEETS := [
 	"res://assets/characters/pixel_character_1/Idle/Blue_Head_Idle-Sheet.png",
 	"res://assets/characters/pixel_character_1/Idle/Orange_Head_Idle-Sheet.png",
@@ -4405,7 +4407,7 @@ func _get_customer_body_index(i: int) -> Texture2D:
 	var fh: int = int(floor(float(sheet.get_height()) / float(CUSTOMER_IDLE_SHEET_ROWS)))
 	var atlas := AtlasTexture.new()
 	atlas.atlas = sheet
-	atlas.region = Rect2i(0, CHARACTER_ROW_FRONT * fh, fw, fh)
+	atlas.region = Rect2i(CUSTOMER_BODY_COL * fw, CUSTOMER_BODY_ROW * fh, fw, fh)
 	return atlas
 
 func _get_customer_idle_sheet(key: String) -> Texture2D:
