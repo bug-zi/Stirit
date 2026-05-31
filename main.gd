@@ -2481,17 +2481,17 @@ func _show_result_screen(result: Dictionary) -> void:
 	var grade_total := _make_label("评级 %s   总分 %d" % [str(result["grade"]), int(result["total_score"])], 28, Color(0.83, 1.0, 0.78), HORIZONTAL_ALIGNMENT_CENTER)
 	grade_total.modulate = Color(1, 1, 1, 0)
 	left_box.add_child(grade_total)
-	var economy_1 := _make_label("成本 -%d   净收益 %+d" % [int(result["service_cost"]), int(result["net_profit"])], 21, Color(0.96, 0.88, 0.64), HORIZONTAL_ALIGNMENT_CENTER)
+	var economy_1 := _make_label("成本 -%d   报酬 +%d" % [int(result["service_cost"]), int(result["coins"])], 21, Color(0.96, 0.88, 0.64), HORIZONTAL_ALIGNMENT_CENTER)
 	economy_1.modulate = Color(1, 1, 1, 0)
 	left_box.add_child(economy_1)
 	var economy_2 := _make_label("资金 %d   经验 +%d" % [int(current_funds), int(result["exp_gain"])], 21, Color(0.96, 0.88, 0.64), HORIZONTAL_ALIGNMENT_CENTER)
 	economy_2.modulate = Color(1, 1, 1, 0)
 	left_box.add_child(economy_2)
 
-	var coins_gain := _make_label("报酬 +0", 28, Color(0.94, 0.96, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
-	coins_gain.modulate = Color(1, 1, 1, 0)
-	left_box.add_child(coins_gain)
-	coins_label = coins_gain
+	var net_profit_gain := _make_label("净收益 +0", 28, Color(0.94, 0.96, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	net_profit_gain.modulate = Color(1, 1, 1, 0)
+	left_box.add_child(net_profit_gain)
+	coins_label = net_profit_gain
 
 	var source_notice := _make_label(str(result["source_notice"]), 17, Color(0.7, 0.78, 0.88), HORIZONTAL_ALIGNMENT_CENTER)
 	source_notice.modulate = Color(1, 1, 1, 0)
@@ -2566,7 +2566,7 @@ func _show_result_screen(result: Dictionary) -> void:
 	root.add_child(next_button)
 
 	var grade_text: String = str(result.get("grade", "F"))
-	var target_coins: int = int(result.get("coins", 0))
+	var target_net_profit: int = int(result.get("net_profit", 0))
 	var tween := create_tween()
 	tween.tween_property(header, "modulate:a", 1.0, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(dish_label, "modulate:a", 1.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -2596,9 +2596,9 @@ func _show_result_screen(result: Dictionary) -> void:
 	tween.tween_property(comment, "modulate:a", 1.0, 0.32)
 	tween.tween_property(reaction, "modulate:a", 1.0, 0.32)
 
-	tween.tween_property(coins_gain, "modulate:a", 1.0, 0.12)
+	tween.tween_property(net_profit_gain, "modulate:a", 1.0, 0.12)
 	tween.tween_callback(Callable(self, "_play_sfx").bind("coin"))
-	tween.tween_method(Callable(self, "_set_number_label").bind(coins_gain, "报酬 +%d"), 0.0, float(target_coins), 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_method(Callable(self, "_set_number_label").bind(net_profit_gain, "净收益 %+d"), 0.0, float(target_net_profit), 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_callback(Callable(self, "_coin_bounce"))
 
 	tween.tween_property(next_button, "modulate:a", 1.0, 0.25)
