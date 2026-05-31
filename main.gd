@@ -2085,15 +2085,10 @@ func _build_bottom_bar() -> Control:
 	return panel
 
 func _make_library_item_button(item: Dictionary, kind: String) -> Button:
-	var button := DraggableLibraryButton.new()
-	button.add_theme_font_size_override("font_size", 16)
-	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	_apply_button_default(button)
+	var button := _make_button("", 16)
 	button.toggle_mode = true
 	button.custom_minimum_size = Vector2(0, 56)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	button.drag_kind = kind
-	button.drag_id = str(item["id"])
 
 	var row := HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -2103,23 +2098,20 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 	row.offset_bottom = -6
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_theme_constant_override("separation", 6)
 	button.add_child(row)
 
 	var icon_size := 30
-	var icon := TextureRect.new()
-	icon.texture = _get_item_icon(kind, str(item["id"]), icon_size)
-	button.drag_icon = icon.texture
-	icon.custom_minimum_size = Vector2(icon_size, icon_size)
-	icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	row.add_child(icon)
+	var icon_rect := DraggableIcon.new()
+	icon_rect.texture = _get_item_icon(kind, str(item["id"]), icon_size)
+	icon_rect.drag_kind = kind
+	icon_rect.drag_id = str(item["id"])
+	icon_rect.custom_minimum_size = Vector2(icon_size, icon_size)
+	icon_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(icon_rect)
 
 	var name_label := _make_label(str(item["name"]), 16, COLOR_TEXT)
-	button.drag_title = str(item["name"])
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -2128,7 +2120,6 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 
 	if kind == "ingredient" or kind == "seasoning":
 		var price := _price_for_item(item, kind)
-		button.drag_price = "￥%d" % price
 		var price_label := _make_label("￥%d" % price, 15, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_RIGHT)
 		price_label.custom_minimum_size = Vector2(44, 0)
 		price_label.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -4413,6 +4404,28 @@ class DraggableLibraryButton:
 		row.add_child(label)
 
 		set_drag_preview(preview)
+		return {"kind": drag_kind, "id": drag_id}
+
+class DraggableIcon:
+	extends TextureRect
+	var drag_kind := ""
+	var drag_id := ""
+
+	func _ready() -> void:
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		mouse_filter = Control.MOUSE_FILTER_PASS
+
+	func _get_drag_data(_at_position: Vector2) -> Variant:
+		if not (texture is Texture2D):
+			return null
+		var icon_preview := TextureRect.new()
+		icon_preview.texture = texture
+		icon_preview.custom_minimum_size = Vector2(52, 52)
+		icon_preview.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		icon_preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon_preview.modulate = Color(1, 1, 1, 0.95)
+		set_drag_preview(icon_preview)
 		return {"kind": drag_kind, "id": drag_id}
 
 func _process_bg_movement(delta: float) -> void:
