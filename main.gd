@@ -2085,10 +2085,15 @@ func _build_bottom_bar() -> Control:
 	return panel
 
 func _make_library_item_button(item: Dictionary, kind: String) -> Button:
-	var button := _make_button("", 16)
+	var button := DraggableLibraryButton.new()
+	button.add_theme_font_size_override("font_size", 16)
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_apply_button_default(button)
 	button.toggle_mode = true
 	button.custom_minimum_size = Vector2(0, 56)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.drag_kind = kind
+	button.drag_id = str(item["id"])
 
 	var row := HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -2098,18 +2103,20 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 	row.offset_bottom = -6
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 6)
 	button.add_child(row)
 
 	var icon_size := 30
-	var icon_rect := DraggableIcon.new()
-	icon_rect.texture = _get_item_icon(kind, str(item["id"]), icon_size)
-	icon_rect.drag_kind = kind
-	icon_rect.drag_id = str(item["id"])
-	icon_rect.custom_minimum_size = Vector2(icon_size, icon_size)
-	icon_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(icon_rect)
+	var icon := TextureRect.new()
+	icon.texture = _get_item_icon(kind, str(item["id"]), icon_size)
+	button.drag_icon = icon.texture
+	icon.custom_minimum_size = Vector2(icon_size, icon_size)
+	icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	row.add_child(icon)
 
 	var name_label := _make_label(str(item["name"]), 16, COLOR_TEXT)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -4355,55 +4362,16 @@ class DraggableLibraryButton:
 	var drag_kind := ""
 	var drag_id := ""
 	var drag_icon: Texture2D
-	var drag_title := ""
-	var drag_price := ""
 
 	func _get_drag_data(_at_position: Vector2) -> Variant:
-		var preview := PanelContainer.new()
-		preview.custom_minimum_size = Vector2(220, 52)
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.08, 0.09, 0.16, 0.92)
-		style.border_color = Color(0.52, 0.56, 0.78, 0.9)
-		style.border_width_left = 2
-		style.border_width_top = 2
-		style.border_width_right = 2
-		style.border_width_bottom = 2
-		style.corner_radius_top_left = 12
-		style.corner_radius_top_right = 12
-		style.corner_radius_bottom_left = 12
-		style.corner_radius_bottom_right = 12
-		preview.add_theme_stylebox_override("panel", style)
-
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
-		row.offset_left = 10
-		row.offset_top = 8
-		row.offset_right = -10
-		row.offset_bottom = -8
-		row.set_anchors_preset(Control.PRESET_FULL_RECT)
-		preview.add_child(row)
-
 		if drag_icon is Texture2D:
-			var icon_rect := TextureRect.new()
-			icon_rect.texture = drag_icon
-			icon_rect.custom_minimum_size = Vector2(34, 34)
-			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-			icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			row.add_child(icon_rect)
-
-		var label := Label.new()
-		var txt := drag_title
-		if drag_price != "":
-			txt = "%s %s" % [txt, drag_price]
-		label.text = txt
-		label.add_theme_font_size_override("font_size", 18)
-		label.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.clip_text = true
-		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(label)
-
-		set_drag_preview(preview)
+			var icon_preview := TextureRect.new()
+			icon_preview.texture = drag_icon
+			icon_preview.custom_minimum_size = Vector2(52, 52)
+			icon_preview.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			icon_preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon_preview.modulate = Color(1, 1, 1, 0.95)
+			set_drag_preview(icon_preview)
 		return {"kind": drag_kind, "id": drag_id}
 
 class DraggableIcon:
