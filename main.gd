@@ -2713,8 +2713,30 @@ func _show_level_up_screen() -> void:
 	choices.add_theme_constant_override("separation", 14)
 	box.add_child(choices)
 	for buff in pending_buff_choices:
-		var button := _make_action_button("%s\n%s" % [buff["name"], buff["description"]], 18, Color(0.12, 0.19, 0.22), Color(0.42, 0.7, 0.72))
-		button.custom_minimum_size = Vector2(250, 150)
+		var button := _make_action_button("", 18, Color(0.12, 0.19, 0.22), Color(0.42, 0.7, 0.72))
+		button.custom_minimum_size = Vector2(280, 190)
+		var content := VBoxContainer.new()
+		content.set_anchors_preset(Control.PRESET_FULL_RECT)
+		content.offset_left = 14
+		content.offset_top = 12
+		content.offset_right = -14
+		content.offset_bottom = -12
+		content.add_theme_constant_override("separation", 10)
+		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(content)
+
+		var name_label := _make_label(str(buff.get("name", "")), 20, Color(0.94, 0.96, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(name_label)
+
+		var desc_label := _make_label(str(buff.get("description", "")), 16, Color(0.86, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		desc_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		desc_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(desc_label)
+
 		button.pressed.connect(_choose_buff.bind(buff["id"]))
 		choices.add_child(button)
 
