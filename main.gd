@@ -4539,31 +4539,53 @@ func _set_number_label(value: float, label: Label, format_text: String) -> void:
 		return
 	label.text = format_text % int(round(value))
 
+const SFX_DEFS := {
+	"select": {"paths": ["res://assets/sfx/select.wav"], "volume_db": -10.0, "pitch_min": 0.96, "pitch_max": 1.04, "cooldown_ms": 35},
+	"cook": {"paths": ["res://assets/sfx/cook.wav"], "volume_db": -8.0, "pitch_min": 0.98, "pitch_max": 1.02, "cooldown_ms": 120},
+	"score": {"paths": ["res://assets/sfx/score.wav"], "volume_db": -10.0, "pitch_min": 0.98, "pitch_max": 1.02, "cooldown_ms": 45},
+	"stamp": {"paths": ["res://assets/sfx/stamp.wav"], "volume_db": -6.0, "pitch_min": 0.98, "pitch_max": 1.02, "cooldown_ms": 120},
+	"coin": {"paths": ["res://assets/sfx/coin.wav"], "volume_db": -7.0, "pitch_min": 0.92, "pitch_max": 1.08, "cooldown_ms": 60},
+	"countdown": {"paths": ["res://assets/sfx/countdown.wav"], "volume_db": -12.0, "pitch_min": 0.99, "pitch_max": 1.01, "cooldown_ms": 180}
+}
+var _sfx_stream_cache: Dictionary = {}
+var _sfx_last_played_ms: Dictionary = {}
+
 func _play_sfx(key: String) -> void:
-	var path := ""
-	match key:
-		"select":
-			path = "res://assets/sfx/select.wav"
-		"cook":
-			path = "res://assets/sfx/cook.wav"
-		"score":
-			path = "res://assets/sfx/score.wav"
-		"stamp":
-			path = "res://assets/sfx/stamp.wav"
-		"coin":
-			path = "res://assets/sfx/coin.wav"
-		"countdown":
-			path = "res://assets/sfx/countdown.wav"
-		_:
-			path = ""
-	if path == "" or not ResourceLoader.exists(path):
+	if not SFX_DEFS.has(key):
 		return
-	var stream := load(path)
+	var def = SFX_DEFS[key]
+	var cooldown_ms: int = int(def.get("cooldown_ms", 0))
+	if cooldown_ms > 0:
+		var now_ms: int = int(Time.get_ticks_msec())
+		var last_ms: int = int(_sfx_last_played_ms.get(key, -1000000))
+		if now_ms - last_ms < cooldown_ms:
+			return
+		_sfx_last_played_ms[key] = now_ms
+
+	var paths: Array = def.get("paths", [])
+	if paths.is_empty():
+		return
+	var pick := str(paths[rng.randi_range(0, paths.size() - 1)])
+	if pick == "" or not ResourceLoader.exists(pick):
+		return
+	var stream = _sfx_stream_cache.get(pick)
+	if not is_instance_valid(stream):
+		stream = load(pick)
+		_sfx_stream_cache[pick] = stream
 	if not (stream is AudioStream):
 		return
+
 	var player := AudioStreamPlayer.new()
-	player.stream = stream
-	player.bus = "Master"
+	player.stream = stream as AudioStream
+	var bus_name := "Master"
+	if AudioServer.get_bus_index("SFX") != -1:
+		bus_name = "SFX"
+	player.bus = bus_name
+	var volume_db: float = float(def.get("volume_db", 0.0))
+	player.volume_db = volume_db
+	var pmin: float = float(def.get("pitch_min", 1.0))
+	var pmax: float = float(def.get("pitch_max", 1.0))
+	player.pitch_scale = rng.randf_range(pmin, pmax) if pmax > pmin else pmin
 	add_child(player)
 	player.finished.connect(player.queue_free)
 	player.play()
