@@ -1408,7 +1408,7 @@ func _pick_next_order() -> void:
 		return
 	var desired_tags: Array = current_order.get("desired_tags", [])
 	presented_ingredients = _roll_presented_items(INGREDIENTS, desired_tags, 12, 6)
-	presented_seasonings = _roll_presented_items(SEASONINGS, desired_tags, 10, 4)
+	presented_seasonings = _roll_presented_items(SEASONINGS, desired_tags, 8, 4)
 
 func _roll_presented_items(source: Array, desired_tags: Array, total: int, min_relevant: int) -> Array:
 	var relevant: Array = []
