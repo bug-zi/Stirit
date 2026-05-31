@@ -1773,7 +1773,8 @@ func _build_customer_panel_left() -> Control:
 
 				var wants := panel.find_child("WantsLabel", true, false)
 				if wants is Label:
-					(wants as Label).add_theme_color_override("font_color", Color(0.78, 0.88, 1.0))
+					(wants as Label).text = ""
+					(wants as Label).visible = false
 
 				return panel
 
@@ -1837,6 +1838,7 @@ func _build_customer_panel_left() -> Control:
 	var wants2 := _make_label("", 16, Color(0.78, 0.88, 1.0))
 	wants2.name = "WantsLabel"
 	wants2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	wants2.visible = false
 	request_box.add_child(wants2)
 
 	return fallback
@@ -1892,9 +1894,6 @@ func _build_pot_panel_center() -> Control:
 	economy_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(economy_label)
 
-	var tags := _make_label("想要：" + "、".join(current_order["desired_tags"]), 14, Color(0.72, 0.83, 0.96))
-	tags.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(tags)
 	return panel
 
 func _build_library_panel_right() -> Control:
@@ -2110,7 +2109,8 @@ func _refresh_playing_ui() -> void:
 			customer_signature_label.text = "%s\n%s" % [name_text, role_text]
 	var wants_label := playing_root.find_child("WantsLabel", true, false)
 	if wants_label is Label:
-		(wants_label as Label).text = "想要：" + "、".join(current_order.get("desired_tags", []))
+		(wants_label as Label).text = ""
+		(wants_label as Label).visible = false
 
 	for id in ingredient_buttons.keys():
 		var b = ingredient_buttons[id]
