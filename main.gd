@@ -216,6 +216,8 @@ var pending_buff_choices := []
 var mistake_insurance_used := false
 var pending_payload := {}
 var pending_http_request: HTTPRequest
+var day_review_label: Label
+var day_review_http_request: HTTPRequest
 var timer_label: Label
 var supabase_config := {}
 var auth_session := {}
@@ -2529,6 +2531,29 @@ func _show_summary_screen() -> void:
 		var line := "%d. %s  %s  %d 分  净收益 %+d" % [index + 1, result["dish_name"], result["grade"], result["total_score"], result["net_profit"]]
 		list.add_child(_make_label(line, 18, Color(0.78, 0.84, 0.92), HORIZONTAL_ALIGNMENT_CENTER))
 
+	var grade_counts := {"S": 0, "A": 0, "B": 0, "C": 0, "D": 0, "F": 0}
+	var profit_total := 0
+	for result in round_results:
+		var g := str(result.get("grade", "F"))
+		if grade_counts.has(g):
+			grade_counts[g] = int(grade_counts[g]) + 1
+		else:
+			grade_counts[g] = 1
+		profit_total += int(result.get("net_profit", 0))
+
+	var ai_panel := _make_panel(Color(0.11, 0.115, 0.18), Color(0.34, 0.38, 0.54), 12)
+	ai_panel.custom_minimum_size = Vector2(780, 150)
+	box.add_child(ai_panel)
+	var ai_box := VBoxContainer.new()
+	ai_box.add_theme_constant_override("separation", 8)
+	ai_panel.add_child(ai_box)
+	ai_box.add_child(_make_label("小炒 AI-7 · 日结评价", 20, Color(0.92, 0.95, 1.0), HORIZONTAL_ALIGNMENT_CENTER))
+	day_review_label = _make_label(_local_day_review_text(average, grade_counts, best, profit_total), 18, Color(0.88, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	day_review_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	day_review_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ai_box.add_child(day_review_label)
+	_request_ai_day_review(_build_day_review_payload(average, grade_counts, best, profit_total))
+
 	var continue_button := _make_button("继续营业", 24)
 	continue_button.custom_minimum_size = Vector2(240, 56)
 	continue_button.pressed.connect(_start_next_day)
@@ -3468,9 +3493,9 @@ func _calculate_selection_cost() -> int:
 	return max(0, cost)
 
 func _grade_for_score(score: int) -> String:
-	if score >= 90:
+	if score >= 88:
 		return "S"
-	if score >= 80:
+	if score >= 78:
 		return "A"
 	if score >= 70:
 		return "B"
@@ -3479,6 +3504,126 @@ func _grade_for_score(score: int) -> String:
 	if score >= 45:
 		return "D"
 	return "F"
+
+func _local_day_review_text(average: int, grade_counts: Dictionary, best: Dictionary, profit_total: int) -> String:
+	var top := str(best.get("dish_name", "暂无"))
+	var top_score := int(best.get("total_score", 0))
+	var s_count := int(grade_counts.get("S", 0))
+	var a_count := int(grade_counts.get("A", 0))
+	var b_count := int(grade_counts.get("B", 0))
+	var core := ""
+	if average >= 88:
+		core = "今天这摊有点离谱地稳：锅不怕怪，怕的是你不继续炒。"
+	elif average >= 78:
+		core = "整体方向是对的，怪得有节制；再大胆一点就能更像招牌。"
+	elif average >= 70:
+		core = "有几单是对味的，但整体还在“能解释”和“真好吃”之间反复横跳。"
+	elif average >= 60:
+		core = "你在努力理解顾客，但锅里还缺一个能把情绪翻译成味道的关键选择。"
+	else:
+		core = "今天的锅像在复盘人生：能动，但不太想动。先把命题命中做扎实。"
+	var hits := "S×%d A×%d B×%d" % [s_count, a_count, b_count]
+	return "%s\n本日：平均 %d 分（%s），最高单：%s / %d 分，净收益 %+d。" % [core, average, hits, top, top_score, profit_total]
+
+func _build_day_review_payload(average: int, grade_counts: Dictionary, best: Dictionary, profit_total: int) -> Dictionary:
+	var compact_results: Array = []
+	for i in range(round_results.size()):
+		var r: Dictionary = round_results[i]
+		compact_results.append({
+			"index": i + 1,
+			"dish_name": str(r.get("dish_name", "")),
+			"grade": str(r.get("grade", "")),
+			"total_score": int(r.get("total_score", 0)),
+			"net_profit": int(r.get("net_profit", 0))
+		})
+	return {
+		"prompt": "你是“小炒 AI-7”的日结点评模块。根据输入数据，给出一段不超过 120 字的中文日结评价，语气毒舌但友好，能点出亮点与短板，并给出一句可执行建议。只返回 JSON，不要输出额外解释。返回格式：{\"summary\":\"...\",\"advice\":\"...\"}。",
+		"day_summary": {
+			"day_index": day_index,
+			"orders": round_results.size(),
+			"total_score": total_score,
+			"average_score": average,
+			"profit_total": profit_total,
+			"best_dish": str(best.get("dish_name", "")),
+			"best_score": int(best.get("total_score", 0)),
+			"grade_counts": grade_counts
+		},
+		"results": compact_results,
+		"return_json_only": true
+	}
+
+func _request_ai_day_review(payload: Dictionary) -> void:
+	if not is_instance_valid(day_review_label):
+		return
+	var active_ai_config := _load_ai_config()
+	var endpoint := str(active_ai_config.get("endpoint", "")).strip_edges()
+	if endpoint == "":
+		return
+	if is_instance_valid(day_review_http_request):
+		day_review_http_request.queue_free()
+	day_review_http_request = HTTPRequest.new()
+	day_review_http_request.timeout = AI_TIMEOUT_SECONDS
+	add_child(day_review_http_request)
+	day_review_http_request.request_completed.connect(_on_ai_day_review_completed)
+
+	var headers := ["Content-Type: application/json"]
+	var token := str(active_ai_config.get("api_key", active_ai_config.get("token", ""))).strip_edges()
+	if token != "":
+		headers.append("Authorization: Bearer %s" % token)
+
+	var body = payload
+	if active_ai_config.get("mode", "legacy") == "chat":
+		body = {
+			"model": str(active_ai_config.get("model", "")).strip_edges(),
+			"messages": [
+				{"role": "system", "content": str(payload.get("prompt", ""))},
+				{"role": "user", "content": JSON.stringify({"day_summary": payload.get("day_summary", {}), "results": payload.get("results", []), "return_json_only": true})}
+			],
+			"temperature": 0.7
+		}
+	var body_json := JSON.stringify(body)
+	var err := day_review_http_request.request(endpoint, headers, HTTPClient.METHOD_POST, body_json)
+	if err != OK:
+		if is_instance_valid(day_review_http_request):
+			day_review_http_request.queue_free()
+
+func _sanitize_ai_day_review(raw: Dictionary) -> Dictionary:
+	if not raw.has("summary") or not raw.has("advice"):
+		return {}
+	var summary := str(raw.get("summary", "")).strip_edges()
+	var advice := str(raw.get("advice", "")).strip_edges()
+	if summary == "" or advice == "":
+		return {}
+	if summary.length() > 160:
+		summary = summary.substr(0, 160)
+	if advice.length() > 120:
+		advice = advice.substr(0, 120)
+	return {"summary": summary, "advice": advice}
+
+func _on_ai_day_review_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if is_instance_valid(day_review_http_request):
+		day_review_http_request.queue_free()
+	if not is_instance_valid(day_review_label):
+		return
+	if result != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300:
+		return
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	var obj: Dictionary = parsed
+	if obj.has("choices") and typeof(obj["choices"]) == TYPE_ARRAY and obj["choices"].size() > 0:
+		var first_choice = obj["choices"][0]
+		if typeof(first_choice) == TYPE_DICTIONARY and first_choice.has("message"):
+			var message = first_choice["message"]
+			if typeof(message) == TYPE_DICTIONARY:
+				var content := str(message.get("content", "")).strip_edges()
+				var parsed_content = JSON.parse_string(_extract_json_text(content))
+				if typeof(parsed_content) == TYPE_DICTIONARY:
+					obj = parsed_content
+	var review := _sanitize_ai_day_review(obj)
+	if review.is_empty():
+		return
+	day_review_label.text = "%s\n建议：%s" % [str(review["summary"]), str(review["advice"])]
 
 func _is_selection_valid() -> bool:
 	return selected_ingredient_ids.size() >= INGREDIENT_MIN and selected_ingredient_ids.size() <= INGREDIENT_MAX and selected_seasoning_ids.size() >= SEASONING_MIN and selected_seasoning_ids.size() <= SEASONING_MAX and selected_method_id != ""
@@ -4987,6 +5132,7 @@ func _clear_screen() -> void:
 	customer_body_rect = null
 	customer_request_label = null
 	customer_signature_label = null
+	day_review_label = null
 	selected_chips_box = null
 	status_label = null
 	economy_label = null
@@ -4997,6 +5143,8 @@ func _clear_screen() -> void:
 	method_buttons.clear()
 	if is_instance_valid(pending_http_request):
 		pending_http_request.queue_free()
+	if is_instance_valid(day_review_http_request):
+		day_review_http_request.queue_free()
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
