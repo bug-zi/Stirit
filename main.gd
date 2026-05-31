@@ -2425,14 +2425,25 @@ func _show_result_screen(result: Dictionary) -> void:
 	stamp.modulate = Color(1, 1, 1, 0)
 	stamp.scale = Vector2(0.3, 0.3)
 	right_box.add_child(stamp)
+	var review_scroll := ScrollContainer.new()
+	review_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	review_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	right_box.add_child(review_scroll)
+	var review_box := VBoxContainer.new()
+	review_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_box.add_theme_constant_override("separation", 14)
+	review_scroll.add_child(review_box)
 	var comment := _make_label("AI 点评：\n%s" % str(result["comment"]), 20, Color(0.93, 0.96, 1.0))
 	comment.modulate = Color(1, 1, 1, 0)
 	comment.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	right_box.add_child(comment)
+	comment.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_box.add_child(comment)
 	var reaction := _make_label("顾客反应：\n%s" % str(result["customer_reaction"]), 20, Color(0.82, 0.9, 0.98))
 	reaction.modulate = Color(1, 1, 1, 0)
 	reaction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	right_box.add_child(reaction)
+	reaction.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_box.add_child(reaction)
 
 	var flash := ColorRect.new()
 	flash.color = Color(1.0, 0.88, 0.3, 0.0)
@@ -2548,10 +2559,18 @@ func _show_summary_screen() -> void:
 	ai_box.add_theme_constant_override("separation", 8)
 	ai_panel.add_child(ai_box)
 	ai_box.add_child(_make_label("小炒 AI-7 · 日结评价", 20, Color(0.92, 0.95, 1.0), HORIZONTAL_ALIGNMENT_CENTER))
+	var day_review_scroll := ScrollContainer.new()
+	day_review_scroll.custom_minimum_size = Vector2(0, 104)
+	day_review_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	day_review_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	ai_box.add_child(day_review_scroll)
+	var day_review_box := VBoxContainer.new()
+	day_review_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	day_review_scroll.add_child(day_review_box)
 	day_review_label = _make_label(_local_day_review_text(average, grade_counts, best, profit_total), 18, Color(0.88, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
 	day_review_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	day_review_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ai_box.add_child(day_review_label)
+	day_review_box.add_child(day_review_label)
 	_request_ai_day_review(_build_day_review_payload(average, grade_counts, best, profit_total))
 
 	var continue_button := _make_button("继续营业", 24)
