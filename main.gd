@@ -2213,7 +2213,7 @@ func _refresh_playing_ui() -> void:
 	current_service_cost = _calculate_selection_cost()
 
 	if is_instance_valid(order_label):
-		order_label.text = "第 %d/%d 单" % [order_index + 1, TOTAL_ORDERS]
+		order_label.text = "第 %d 天 · 第 %d/%d 单" % [day_index, order_index + 1, TOTAL_ORDERS]
 	if is_instance_valid(funds_label):
 		funds_label.text = "资金 %d" % current_funds
 	if is_instance_valid(title_label):
@@ -2463,7 +2463,7 @@ func _show_result_screen(result: Dictionary) -> void:
 	root.add_theme_constant_override("separation", 12)
 	page.add_child(root)
 
-	var header := _make_label("第 %d 单评价" % [order_index + 1], 26, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_CENTER)
+	var header := _make_label("第 %d 天 · 第 %d 单评价" % [day_index, order_index + 1], 26, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_CENTER)
 	header.modulate = Color(1, 1, 1, 0)
 	root.add_child(header)
 
