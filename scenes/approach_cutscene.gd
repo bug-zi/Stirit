@@ -204,7 +204,7 @@ func _apply_setup() -> void:
 		portrait_rect.texture = portrait_texture
 		portrait_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if is_instance_valid(shop_name_label):
-		shop_name_label.text = "BOSS · " + customer_name if is_boss else customer_name
+		shop_name_label.text = customer_name
 		shop_name_label.add_theme_font_size_override("font_size", 44)
 		if is_boss:
 			shop_name_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))

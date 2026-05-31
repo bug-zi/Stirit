@@ -888,21 +888,13 @@ class StallApproachView:
 				var dest_origin := origin + Vector2((52 + (fw - fw * sb) / 2.0) * tile, (52 - fh * sb) * tile)
 				draw_texture_rect_region(idle_sheet, Rect2(dest_origin, dest_size), src, Color(1, 1, 1, 1))
 
-		if boss:
-			var flicker := 0.7 + 0.3 * sin(phase * 6.0)
-			draw_rect(Rect2(origin + Vector2(18 * tile, 14 * tile), Vector2(54 * tile, 10 * tile)), Color(0.08, 0.09, 0.16, 0.9))
-			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), "BOSS · " + customer_name, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 22, Color(1.0, 0.3, 0.3, flicker))
-			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 34 * tile), customer_role, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 14, Color(0.78, 0.88, 1.0, 0.7))
-		else:
-			var label_col := Color(1.0, 0.94, 0.65, 0.95)
-			draw_rect(Rect2(origin + Vector2(18 * tile, 14 * tile), Vector2(54 * tile, 10 * tile)), Color(0.06, 0.06, 0.12, 0.95))
-			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), customer_name, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 22, label_col)
-			draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 34 * tile), customer_role, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 14, Color(0.78, 0.88, 1.0, 0.7))
+		var label_col := Color(1.0, 0.3, 0.3, 0.95) if boss else Color(1.0, 0.94, 0.65, 0.95)
+		draw_rect(Rect2(origin + Vector2(18 * tile, 14 * tile), Vector2(54 * tile, 10 * tile)), Color(0.06, 0.06, 0.12, 0.95))
+		draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 22 * tile), customer_name, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 22, label_col)
+		draw_string(get_theme_default_font(), origin + Vector2(20 * tile, 34 * tile), customer_role, HORIZONTAL_ALIGNMENT_LEFT, 52 * tile, 14, Color(0.78, 0.88, 1.0, 0.7))
 
 		_draw_fairy_lights(origin, tile)
 		_draw_thought_fragment(origin, tile)
-		if boss:
-			_draw_boss_glow(origin, tile)
 
 	func _draw_stall(origin: Vector2, tile: int) -> void:
 		var stall_x := 86; var stall_w := 70; var stall_y := 20; var stall_h := 56
@@ -1579,7 +1571,7 @@ func _build_session_bar() -> Control:
 	row.add_theme_constant_override("separation", 28)
 	panel.add_child(row)
 
-	row.add_child(_make_label("第 %d 天  %d / %d 单%s" % [day_index, order_index + 1, TOTAL_ORDERS, "  BOSS" if current_order.get("boss", false) else ""], 20, Color(1.0, 0.84, 0.58)))
+	row.add_child(_make_label("第 %d 天  %d / %d 单" % [day_index, order_index + 1, TOTAL_ORDERS], 20, Color(1.0, 0.84, 0.58)))
 	row.add_child(_make_label("资金  %d" % current_funds, 20, Color(0.96, 0.78, 0.42)))
 	row.add_child(_make_label("成本  %d" % current_service_cost, 19, Color(1.0, 0.58, 0.48)))
 	row.add_child(_make_label("%s Lv.%d" % [player_title, player_level], 18, Color(0.82, 1.0, 0.82)))
@@ -1752,7 +1744,9 @@ func _build_customer_panel_left() -> Control:
 					customer_body_rect = body as TextureRect
 					customer_body_rect.custom_minimum_size = Vector2(240, 240)
 					customer_body_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-					customer_body_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+					customer_body_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+					customer_body_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+					customer_body_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 					customer_body_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 				var signature := panel.find_child("Signature", true, false)
@@ -1773,7 +1767,8 @@ func _build_customer_panel_left() -> Control:
 
 				var wants := panel.find_child("WantsLabel", true, false)
 				if wants is Label:
-					(wants as Label).add_theme_color_override("font_color", Color(0.78, 0.88, 1.0))
+					(wants as Label).text = ""
+					(wants as Label).visible = false
 
 				return panel
 
@@ -1815,7 +1810,9 @@ func _build_customer_panel_left() -> Control:
 	customer_body_rect = TextureRect.new()
 	customer_body_rect.custom_minimum_size = Vector2(240, 240)
 	customer_body_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	customer_body_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	customer_body_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	customer_body_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	customer_body_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	customer_body_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	body_center.add_child(customer_body_rect)
 
@@ -1837,6 +1834,7 @@ func _build_customer_panel_left() -> Control:
 	var wants2 := _make_label("", 16, Color(0.78, 0.88, 1.0))
 	wants2.name = "WantsLabel"
 	wants2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	wants2.visible = false
 	request_box.add_child(wants2)
 
 	return fallback
@@ -1892,9 +1890,6 @@ func _build_pot_panel_center() -> Control:
 	economy_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(economy_label)
 
-	var tags := _make_label("想要：" + "、".join(current_order["desired_tags"]), 14, Color(0.72, 0.83, 0.96))
-	tags.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(tags)
 	return panel
 
 func _build_library_panel_right() -> Control:
@@ -2081,7 +2076,7 @@ func _refresh_playing_ui() -> void:
 	current_service_cost = _calculate_selection_cost()
 
 	if is_instance_valid(order_label):
-		order_label.text = "第 %d/%d 单%s" % [order_index + 1, TOTAL_ORDERS, " · BOSS" if current_order.get("boss", false) else ""]
+		order_label.text = "第 %d/%d 单" % [order_index + 1, TOTAL_ORDERS]
 	if is_instance_valid(funds_label):
 		funds_label.text = "资金 %d" % current_funds
 	if is_instance_valid(title_label):
@@ -2104,13 +2099,14 @@ func _refresh_playing_ui() -> void:
 		customer_signature_label.add_theme_font_size_override("font_size", 22)
 		if boss:
 			customer_signature_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
-			customer_signature_label.text = "BOSS · %s\n%s" % [name_text, role_text]
+			customer_signature_label.text = "%s\n%s" % [name_text, role_text]
 		else:
 			customer_signature_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.3, 1.0))
 			customer_signature_label.text = "%s\n%s" % [name_text, role_text]
 	var wants_label := playing_root.find_child("WantsLabel", true, false)
 	if wants_label is Label:
-		(wants_label as Label).text = "想要：" + "、".join(current_order.get("desired_tags", []))
+		(wants_label as Label).text = ""
+		(wants_label as Label).visible = false
 
 	for id in ingredient_buttons.keys():
 		var b = ingredient_buttons[id]
@@ -3188,8 +3184,6 @@ func _choose_buff(buff_id: String) -> void:
 		_show_game_screen(true)
 
 func _should_play_approach_for_order() -> bool:
-	if bool(current_order.get("boss", false)):
-		return false
 	return int(order_index) % 5 == 0
 
 func _build_evaluation_payload() -> Dictionary:
