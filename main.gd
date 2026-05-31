@@ -3891,9 +3891,11 @@ func _stop_timer_pulse() -> void:
 		timer_label.scale = Vector2.ONE
 
 func _make_page() -> MarginContainer:
-	var background := ColorRect.new()
-	background.color = COLOR_BG
+	var background := TextureRect.new()
+	background.texture = _get_bg_base_texture()
 	background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	background.stretch_mode = TextureRect.STRETCH_SCALE
 	add_child(background)
 
 	if not is_instance_valid(_bg_overlay):
@@ -3903,7 +3905,7 @@ func _make_page() -> MarginContainer:
 		_bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 		_bg_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_bg_overlay.stretch_mode = TextureRect.STRETCH_TILE
-		_bg_overlay.modulate = Color(1, 1, 1, 0.12)
+		_bg_overlay.modulate = Color(1, 1, 1, 0.16)
 		_bg_overlay.offset_left = -64
 		_bg_overlay.offset_top = -64
 		_bg_overlay.offset_right = 64
@@ -3920,6 +3922,38 @@ func _make_page() -> MarginContainer:
 	return margin
 
 var _bg_texture_cache: Texture2D
+var _bg_base_texture_cache: Texture2D
+
+func _get_bg_base_texture() -> Texture2D:
+	if _bg_base_texture_cache:
+		return _bg_base_texture_cache
+	var s := 256
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	var rr := RandomNumberGenerator.new()
+	rr.seed = 973241
+	var top := Color(0.05, 0.055, 0.11, 1.0)
+	var bottom := Color(0.09, 0.10, 0.18, 1.0)
+	for y in range(s):
+		var v := float(y) / float(s - 1)
+		var base_y := top.lerp(bottom, v)
+		for x in range(s):
+			var u := float(x) / float(s - 1)
+			var dx := u - 0.5
+			var dy := v - 0.46
+			var dist2 := dx * dx + dy * dy
+			var vignette := clampf(1.0 - dist2 * 2.2, 0.0, 1.0)
+			var band := 0.5 + 0.5 * sin((u * 1.25 + v * 0.95) * TAU)
+			var n := (rr.randf() - 0.5) * 0.035
+			var lift := 0.035 * vignette + 0.012 * band + n
+			var c := Color(
+				clampf(base_y.r + lift, 0.0, 1.0),
+				clampf(base_y.g + lift, 0.0, 1.0),
+				clampf(base_y.b + lift * 1.15, 0.0, 1.0),
+				1.0
+			)
+			img.set_pixel(x, y, c)
+	_bg_base_texture_cache = ImageTexture.create_from_image(img)
+	return _bg_base_texture_cache
 
 func _get_bg_texture() -> Texture2D:
 	if _bg_texture_cache:
