@@ -7,6 +7,11 @@ const INGREDIENT_MAX := 3
 const SEASONING_MIN := 1
 const SEASONING_MAX := 2
 const AI_TIMEOUT_SECONDS := 20.0
+const AI_ASSISTANT_TIMEOUT_SECONDS := 8.0
+const AI_ASSISTANT_MAX_COMMENTS_PER_ORDER := 3
+const AI_ASSISTANT_SELECTION_DELAY := 3.0
+const AI_ASSISTANT_COOLDOWN_SECONDS := 14.0
+const AI_ASSISTANT_BUBBLE_SECONDS := 5.0
 const INITIAL_FUNDS := 666
 const BASE_SERVICE_COST := 50
 const SERVICE_COST_STEP := 12
@@ -275,6 +280,17 @@ var pending_buff_choices := []
 var mistake_insurance_used := false
 var pending_payload := {}
 var pending_http_request: HTTPRequest
+var assistant_http_request: HTTPRequest
+var assistant_prompt_dirty := false
+var assistant_time_since_selection := 0.0
+var assistant_cooldown_left := 2.0
+var assistant_comments_this_order := 0
+var assistant_bubble_left := 0.0
+var assistant_text := "锅边 AI 已就位，正在观察这锅东西。"
+var assistant_mood := "idle"
+var assistant_waiting := false
+var assistant_last_signature := ""
+var assistant_timer_hint_used := false
 var day_review_label: Label
 var day_review_http_request: HTTPRequest
 var timer_label: Label
@@ -321,6 +337,10 @@ var selected_chips_box: Container
 var status_label: Label
 var economy_label: Label
 var cook_button: Button
+var assistant_panel: PanelContainer
+var assistant_icon_rect: TextureRect
+var assistant_name_label: Label
+var assistant_bubble_label: Label
 var _bg_overlay: TextureRect
 var _bg_offset := Vector2.ZERO
 var _timer_pulsing := false
@@ -1134,6 +1154,7 @@ func _process(delta: float) -> void:
 	_update_timer_label()
 	_update_vignette()
 	_process_bg_movement(delta)
+	_process_ai_assistant(delta)
 
 func _show_start_screen() -> void:
 	screen_state = "start"
@@ -1477,6 +1498,7 @@ func _pick_next_order() -> void:
 	selected_method_id = ""
 	message_text = ""
 	time_left = ROUND_SECONDS
+	_reset_ai_assistant_for_order()
 	current_customer_variant_index = rng.randi_range(0, CHARACTER_IDLE_SHEETS.size() - 1)
 	day_index = int(floor(float(completed_orders) / float(TOTAL_ORDERS))) + 1
 	if order_index == TOTAL_ORDERS - 1:
@@ -1972,6 +1994,8 @@ func _build_pot_panel_center() -> Control:
 	steam_particles.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pot_layer.add_child(steam_particles)
 
+	box.add_child(_build_ai_assistant_panel())
+
 	status_label = _make_label("", 16, COLOR_TEXT_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(status_label)
@@ -1996,6 +2020,51 @@ func _on_pot_drop(kind: String, item_id: String) -> void:
 			if b is Button:
 				(b as Button).set_pressed_no_signal(true)
 		_on_toggle_seasoning(true, id)
+
+func _build_ai_assistant_panel() -> Control:
+	assistant_panel = _make_panel(Color(0.105, 0.12, 0.20, 0.94), Color(0.34, 0.7, 0.82, 0.75), 12)
+	assistant_panel.custom_minimum_size = Vector2(0, 92)
+	assistant_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	assistant_panel.modulate = Color(1, 1, 1, 0.92)
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	row.add_theme_constant_override("separation", 10)
+	assistant_panel.add_child(row)
+
+	var icon_button := Button.new()
+	icon_button.flat = true
+	icon_button.custom_minimum_size = Vector2(68, 68)
+	icon_button.tooltip_text = "点一下让锅边 AI 看看当前搭配。"
+	icon_button.pressed.connect(_on_ai_assistant_pressed)
+	row.add_child(icon_button)
+	assistant_icon_rect = TextureRect.new()
+	assistant_icon_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	assistant_icon_rect.offset_left = 8
+	assistant_icon_rect.offset_top = 8
+	assistant_icon_rect.offset_right = -8
+	assistant_icon_rect.offset_bottom = -8
+	assistant_icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	assistant_icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	assistant_icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	assistant_icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_button.add_child(assistant_icon_rect)
+
+	var text_box := VBoxContainer.new()
+	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	text_box.add_theme_constant_override("separation", 4)
+	row.add_child(text_box)
+	assistant_name_label = _make_label("锅边 AI", 15, Color(0.72, 0.92, 1.0))
+	text_box.add_child(assistant_name_label)
+	assistant_bubble_label = _make_label("", 18, Color(0.94, 0.98, 1.0))
+	assistant_bubble_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	assistant_bubble_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	assistant_bubble_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	text_box.add_child(assistant_bubble_label)
+
+	_refresh_ai_assistant_ui()
+	return assistant_panel
 
 func _build_library_panel_right() -> Control:
 	var panel := _make_panel(Color(0.14, 0.145, 0.23), Color(0.34, 0.38, 0.54), 12)
@@ -2298,6 +2367,7 @@ func _refresh_playing_ui() -> void:
 		_stop_cook_breath()
 	if is_instance_valid(customer_avatar_rect):
 		_start_avatar_idle()
+	_refresh_ai_assistant_ui()
 
 func _rebuild_selected_chips() -> void:
 	if not is_instance_valid(selected_chips_box):
@@ -2391,6 +2461,7 @@ func _on_toggle_ingredient(pressed: bool, item_id: String) -> void:
 	else:
 		selected_ingredient_ids.erase(item_id)
 		message_text = ""
+	_mark_ai_assistant_selection_changed()
 	_refresh_playing_ui()
 
 func _on_toggle_seasoning(pressed: bool, item_id: String) -> void:
@@ -2415,6 +2486,7 @@ func _on_toggle_seasoning(pressed: bool, item_id: String) -> void:
 	else:
 		selected_seasoning_ids.erase(item_id)
 		message_text = ""
+	_mark_ai_assistant_selection_changed()
 	_refresh_playing_ui()
 
 func _on_toggle_method(pressed: bool, method_id: String) -> void:
@@ -2424,6 +2496,7 @@ func _on_toggle_method(pressed: bool, method_id: String) -> void:
 		if selected_method_id == method_id:
 			selected_method_id = ""
 	message_text = ""
+	_mark_ai_assistant_selection_changed()
 	_refresh_playing_ui()
 
 func _show_evaluating_screen() -> void:
@@ -2781,6 +2854,7 @@ func _on_add_ingredient(item_id: String) -> void:
 	else:
 		selected_ingredient_ids.append(item_id)
 		message_text = ""
+		_mark_ai_assistant_selection_changed()
 	_refresh_playing_ui()
 
 func _on_add_seasoning(item_id: String) -> void:
@@ -2791,21 +2865,25 @@ func _on_add_seasoning(item_id: String) -> void:
 	else:
 		selected_seasoning_ids.append(item_id)
 		message_text = ""
+		_mark_ai_assistant_selection_changed()
 	_refresh_playing_ui()
 
 func _on_remove_ingredient(item_id: String) -> void:
 	selected_ingredient_ids.erase(item_id)
 	message_text = ""
+	_mark_ai_assistant_selection_changed()
 	_refresh_playing_ui()
 
 func _on_remove_seasoning(item_id: String) -> void:
 	selected_seasoning_ids.erase(item_id)
 	message_text = ""
+	_mark_ai_assistant_selection_changed()
 	_refresh_playing_ui()
 
 func _on_select_method(method_id: String) -> void:
 	selected_method_id = method_id
 	message_text = ""
+	_mark_ai_assistant_selection_changed()
 	_refresh_playing_ui()
 
 func _submit_auth_form() -> void:
@@ -3226,6 +3304,20 @@ func _load_user_ai_config() -> Dictionary:
 	return default_config
 
 func _build_chat_completion_body(config: Dictionary, payload: Dictionary) -> Dictionary:
+	var user_content := {
+		"customer": payload["customer"],
+		"return_json_only": true
+	}
+	if payload.has("dish"):
+		user_content["dish"] = payload["dish"]
+	if payload.has("system_score"):
+		user_content["system_score"] = payload["system_score"]
+	if payload.has("current_selection"):
+		user_content["current_selection"] = payload["current_selection"]
+	if payload.has("selection_state"):
+		user_content["selection_state"] = payload["selection_state"]
+	if payload.has("system_summary"):
+		user_content["system_summary"] = payload["system_summary"]
 	return {
 		"model": str(config.get("model", "")).strip_edges(),
 		"messages": [
@@ -3235,12 +3327,7 @@ func _build_chat_completion_body(config: Dictionary, payload: Dictionary) -> Dic
 			},
 			{
 				"role": "user",
-				"content": JSON.stringify({
-					"customer": payload["customer"],
-					"dish": payload["dish"],
-					"system_score": payload["system_score"],
-					"return_json_only": true
-				})
+				"content": JSON.stringify(user_content)
 			}
 		],
 		"temperature": 0.7
@@ -3287,6 +3374,273 @@ func _on_ai_request_completed(result: int, response_code: int, _headers: PackedS
 		_finish_evaluation(_make_local_evaluation(pending_payload), "点单系统短路，启用本地评分。")
 		return
 	_finish_evaluation(evaluation, "小炒 AI-7 已完成评价。")
+
+func _reset_ai_assistant_for_order() -> void:
+	if is_instance_valid(assistant_http_request):
+		assistant_http_request.queue_free()
+	assistant_prompt_dirty = false
+	assistant_time_since_selection = 0.0
+	assistant_cooldown_left = 2.0
+	assistant_comments_this_order = 0
+	assistant_bubble_left = AI_ASSISTANT_BUBBLE_SECONDS
+	assistant_text = "锅边 AI 已就位，正在观察这锅东西。"
+	assistant_mood = "idle"
+	assistant_waiting = false
+	assistant_last_signature = ""
+	assistant_timer_hint_used = false
+
+func _mark_ai_assistant_selection_changed() -> void:
+	if screen_state != "playing":
+		return
+	assistant_prompt_dirty = true
+	assistant_time_since_selection = 0.0
+
+func _process_ai_assistant(delta: float) -> void:
+	assistant_cooldown_left = maxf(0.0, assistant_cooldown_left - delta)
+	if assistant_bubble_left > 0.0:
+		assistant_bubble_left = maxf(0.0, assistant_bubble_left - delta)
+		if assistant_bubble_left == 0.0:
+			_refresh_ai_assistant_ui()
+	if assistant_waiting:
+		_refresh_ai_assistant_ui()
+		return
+	if assistant_comments_this_order >= AI_ASSISTANT_MAX_COMMENTS_PER_ORDER:
+		return
+	if selected_ingredient_ids.is_empty() and selected_seasoning_ids.is_empty() and selected_method_id == "":
+		return
+	if time_left <= 20.0 and not assistant_timer_hint_used:
+		assistant_timer_hint_used = true
+		assistant_prompt_dirty = true
+		assistant_time_since_selection = AI_ASSISTANT_SELECTION_DELAY
+	if not assistant_prompt_dirty:
+		return
+	assistant_time_since_selection += delta
+	if assistant_time_since_selection < AI_ASSISTANT_SELECTION_DELAY or assistant_cooldown_left > 0.0:
+		return
+	_request_ai_assistant_comment()
+
+func _on_ai_assistant_pressed() -> void:
+	if screen_state != "playing" or assistant_waiting:
+		return
+	if selected_ingredient_ids.is_empty() and selected_seasoning_ids.is_empty() and selected_method_id == "":
+		_show_ai_assistant_comment("先往锅里扔点东西，不然我只能评价空气的层次感。", "thinking")
+		return
+	assistant_prompt_dirty = true
+	assistant_time_since_selection = AI_ASSISTANT_SELECTION_DELAY
+	if assistant_cooldown_left <= 0.0:
+		_request_ai_assistant_comment()
+	else:
+		_show_ai_assistant_comment(_make_local_ai_assistant_comment(_build_ai_assistant_payload())["text"], "smirk", false)
+
+func _request_ai_assistant_comment() -> void:
+	var payload := _build_ai_assistant_payload()
+	var signature := JSON.stringify(payload["current_selection"]) + "|%d" % int(time_left)
+	if signature == assistant_last_signature and assistant_bubble_left > 0.0:
+		assistant_prompt_dirty = false
+		return
+	assistant_last_signature = signature
+	assistant_prompt_dirty = false
+	assistant_time_since_selection = 0.0
+	assistant_cooldown_left = AI_ASSISTANT_COOLDOWN_SECONDS
+
+	var active_ai_config := _load_ai_config()
+	var endpoint := str(active_ai_config.get("endpoint", "")).strip_edges()
+	if endpoint == "":
+		var local_comment := _make_local_ai_assistant_comment(payload)
+		_show_ai_assistant_comment(str(local_comment["text"]), str(local_comment["mood"]))
+		return
+
+	assistant_waiting = true
+	assistant_text = "让我闻一下这锅语义。"
+	assistant_mood = "thinking"
+	assistant_bubble_left = AI_ASSISTANT_BUBBLE_SECONDS
+	_refresh_ai_assistant_ui()
+
+	assistant_http_request = HTTPRequest.new()
+	assistant_http_request.timeout = AI_ASSISTANT_TIMEOUT_SECONDS
+	add_child(assistant_http_request)
+	assistant_http_request.request_completed.connect(_on_ai_assistant_completed.bind(payload))
+
+	var headers := ["Content-Type: application/json"]
+	var token := str(active_ai_config.get("api_key", active_ai_config.get("token", ""))).strip_edges()
+	if token != "":
+		headers.append("Authorization: Bearer %s" % token)
+
+	var body := payload
+	if active_ai_config.get("mode", "legacy") == "chat":
+		body = _build_chat_completion_body(active_ai_config, payload)
+	var error := assistant_http_request.request(endpoint, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
+	if error != OK:
+		if is_instance_valid(assistant_http_request):
+			assistant_http_request.queue_free()
+		assistant_waiting = false
+		var local_comment := _make_local_ai_assistant_comment(payload)
+		_show_ai_assistant_comment(str(local_comment["text"]), str(local_comment["mood"]))
+
+func _on_ai_assistant_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray, payload: Dictionary) -> void:
+	if is_instance_valid(assistant_http_request):
+		assistant_http_request.queue_free()
+	assistant_waiting = false
+	if screen_state != "playing":
+		return
+	if result != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300:
+		var local_comment := _make_local_ai_assistant_comment(payload)
+		_show_ai_assistant_comment(str(local_comment["text"]), str(local_comment["mood"]))
+		return
+
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		var local_comment := _make_local_ai_assistant_comment(payload)
+		_show_ai_assistant_comment(str(local_comment["text"]), str(local_comment["mood"]))
+		return
+
+	if parsed.has("choices") and typeof(parsed["choices"]) == TYPE_ARRAY and parsed["choices"].size() > 0:
+		var first_choice = parsed["choices"][0]
+		if typeof(first_choice) == TYPE_DICTIONARY and first_choice.has("message"):
+			var message = first_choice["message"]
+			if typeof(message) == TYPE_DICTIONARY:
+				var content := str(message.get("content", "")).strip_edges()
+				var parsed_content = JSON.parse_string(_extract_json_text(content))
+				if typeof(parsed_content) == TYPE_DICTIONARY:
+					parsed = parsed_content
+
+	var comment := _sanitize_ai_assistant_comment(parsed)
+	if comment.is_empty():
+		comment = _make_local_ai_assistant_comment(payload)
+	_show_ai_assistant_comment(str(comment["text"]), str(comment["mood"]))
+
+func _build_ai_assistant_payload() -> Dictionary:
+	var semantic_tags := _selected_semantic_tags()
+	var desired_tags: Array = current_order.get("desired_tags", [])
+	var avoid_tags: Array = current_order.get("avoid_tags", [])
+	var matched_desired := []
+	var matched_avoid := []
+	for tag in desired_tags:
+		if semantic_tags.has(tag):
+			matched_desired.append(tag)
+	for tag in avoid_tags:
+		if semantic_tags.has(tag):
+			matched_avoid.append(tag)
+	var risk_score := _calculate_risk_score(semantic_tags, int(current_order.get("difficulty", 1)))
+	var risk_level := "low"
+	if risk_score >= 72:
+		risk_level = "high"
+	elif risk_score >= 48:
+		risk_level = "medium"
+	var method := _find_by_id(selected_method_id, COOKING_METHODS)
+	return {
+		"prompt": "你是《你来说我来炒》的锅边 AI 小助手，不是结算评分器。请只返回 JSON：{\"type\":\"tease|hint|warning|encourage\",\"text\":\"一句 12 到 45 字中文短句\",\"mood\":\"idle|smirk|shock|thinking|excited\"}。你要根据顾客需求和玩家当前选择给出毒舌但友好的制作中吐槽或轻建议。不要泄露隐藏标签、不要给具体分数、不要直接告诉玩家选什么、不要长篇解释。",
+		"customer": {
+			"name": current_order.get("customer_name", ""),
+			"role": current_order.get("role", ""),
+			"request": current_order.get("request", ""),
+			"desired_tags": desired_tags,
+			"avoid_tags": avoid_tags
+		},
+		"current_selection": {
+			"ingredients": _names_for_ids(selected_ingredient_ids, INGREDIENTS),
+			"seasonings": _names_for_ids(selected_seasoning_ids, SEASONINGS),
+			"method": str(method.get("name", "")) if not method.is_empty() else ""
+		},
+		"selection_state": {
+			"ingredient_count": selected_ingredient_ids.size(),
+			"seasoning_count": selected_seasoning_ids.size(),
+			"has_method": selected_method_id != "",
+			"can_submit": _is_selection_valid(),
+			"seconds_left": int(ceil(time_left))
+		},
+		"system_summary": {
+			"matched_desired_tags": matched_desired,
+			"matched_avoid_tags": matched_avoid,
+			"all_tags": semantic_tags,
+			"risk_level": risk_level
+		}
+	}
+
+func _sanitize_ai_assistant_comment(raw: Dictionary) -> Dictionary:
+	if not raw.has("text"):
+		return {}
+	var text := str(raw["text"]).strip_edges().replace("\n", " ")
+	if text == "":
+		return {}
+	if text.length() > 58:
+		text = text.substr(0, 58)
+	var mood := str(raw.get("mood", "smirk")).strip_edges()
+	if not ["idle", "smirk", "shock", "thinking", "excited"].has(mood):
+		mood = "smirk"
+	var kind := str(raw.get("type", "tease")).strip_edges()
+	if not ["tease", "hint", "warning", "encourage"].has(kind):
+		kind = "tease"
+	return {
+		"type": kind,
+		"text": text,
+		"mood": mood
+	}
+
+func _make_local_ai_assistant_comment(payload: Dictionary) -> Dictionary:
+	var state: Dictionary = payload.get("selection_state", {})
+	var summary: Dictionary = payload.get("system_summary", {})
+	var selection: Dictionary = payload.get("current_selection", {})
+	var ingredients: Array = selection.get("ingredients", [])
+	var seasonings: Array = selection.get("seasonings", [])
+	var matched_desired: Array = summary.get("matched_desired_tags", [])
+	var matched_avoid: Array = summary.get("matched_avoid_tags", [])
+	var risk_level := str(summary.get("risk_level", "low"))
+	var text := ""
+	var mood := "smirk"
+	if int(state.get("seconds_left", 99)) <= 20:
+		text = "时间快没了，这锅再犹豫就从创意料理变成事故报告。"
+		mood = "shock"
+	elif bool(state.get("can_submit", false)) and matched_desired.size() >= 2:
+		text = "主题已经冒出来了，可以考虑把命运交给出锅按钮。"
+		mood = "excited"
+	elif matched_avoid.size() > 0:
+		text = "这锅碰到顾客雷区边缘了，离谱可以，别太用力。"
+		mood = "thinking"
+	elif risk_level == "high":
+		text = "风险味有点冲，顾客可能会以为这是人格压力测试。"
+		mood = "shock"
+	elif seasonings.size() >= SEASONING_MAX:
+		text = "调料已经开始开会了，再吵一点锅都要申请静音。"
+		mood = "smirk"
+	elif ingredients.size() == 1:
+		text = "只有一个主角还不够，顾客的情绪需要一点搭子。"
+		mood = "thinking"
+	elif selected_method_id == "":
+		text = "材料有了，差一种烹饪方式把这锅性格定下来。"
+		mood = "thinking"
+	elif matched_desired.size() > 0:
+		text = "方向有点对味了，怪得还算有证据链。"
+		mood = "smirk"
+	else:
+		text = "这锅目前很自由，但自由到顾客可能需要翻译器。"
+		mood = "smirk"
+	return {
+		"type": "tease",
+		"text": text,
+		"mood": mood
+	}
+
+func _show_ai_assistant_comment(text: String, mood: String, count_comment: bool = true) -> void:
+	assistant_text = text
+	assistant_mood = mood
+	assistant_bubble_left = AI_ASSISTANT_BUBBLE_SECONDS
+	if count_comment:
+		assistant_comments_this_order += 1
+	_refresh_ai_assistant_ui()
+
+func _refresh_ai_assistant_ui() -> void:
+	if is_instance_valid(assistant_icon_rect):
+		assistant_icon_rect.texture = _get_icon("assistant_%s" % assistant_mood, 64, COLOR_ACCENT, COLOR_SECONDARY)
+	if is_instance_valid(assistant_name_label):
+		assistant_name_label.text = "锅边 AI · 思考中" if assistant_waiting else "锅边 AI"
+	if is_instance_valid(assistant_bubble_label):
+		if assistant_bubble_left <= 0.0 and not assistant_waiting:
+			assistant_bubble_label.text = "..."
+			assistant_bubble_label.add_theme_color_override("font_color", Color(0.68, 0.76, 0.84))
+		else:
+			assistant_bubble_label.text = assistant_text
+			assistant_bubble_label.add_theme_color_override("font_color", Color(0.94, 0.98, 1.0))
 
 func _finish_evaluation(evaluation: Dictionary, source_notice: String) -> void:
 	var total := _calculate_total_score(evaluation["scores"])
@@ -5159,6 +5513,37 @@ func _draw_named_icon(image: Image, key: String, a: Color, b: Color) -> void:
 			_icon_rect_mask(image, mask, ox, oy, 7, 9, 2, 1, pixel_scale, Color(0.72, 0.32, 0.32))
 			_draw_shadow_from_mask(image, mask, ox, oy, pixel_scale, 1, 1, Color(0, 0, 0, 0.18))
 			_draw_outline_from_mask(image, mask, ox, oy, pixel_scale, outline)
+		"assistant":
+			var body := Color(0.18, 0.78, 0.92)
+			var face := Color(0.06, 0.10, 0.16)
+			var light := Color(1.0, 0.88, 0.28)
+			_icon_rect_mask(image, mask, ox, oy, 4, 4, 8, 8, pixel_scale, body)
+			_icon_rect_mask(image, mask, ox, oy, 5, 6, 6, 4, pixel_scale, face)
+			_icon_px_mask(image, mask, ox, oy, 7, 3, pixel_scale, light)
+			_icon_rect_mask(image, mask, ox, oy, 7, 2, 2, 1, pixel_scale, body)
+			match id:
+				"thinking":
+					_icon_px_mask(image, mask, ox, oy, 6, 8, pixel_scale, light)
+					_icon_px_mask(image, mask, ox, oy, 9, 8, pixel_scale, light)
+					_icon_px_mask(image, mask, ox, oy, 10, 5, pixel_scale, light)
+				"shock":
+					_icon_rect_mask(image, mask, ox, oy, 6, 7, 1, 2, pixel_scale, light)
+					_icon_rect_mask(image, mask, ox, oy, 9, 7, 1, 2, pixel_scale, light)
+					_icon_px_mask(image, mask, ox, oy, 8, 10, pixel_scale, light)
+				"excited":
+					_icon_px_mask(image, mask, ox, oy, 6, 7, pixel_scale, light)
+					_icon_px_mask(image, mask, ox, oy, 9, 7, pixel_scale, light)
+					_icon_rect_mask(image, mask, ox, oy, 6, 9, 4, 1, pixel_scale, light)
+				"idle":
+					_icon_px_mask(image, mask, ox, oy, 6, 8, pixel_scale, light)
+					_icon_px_mask(image, mask, ox, oy, 9, 8, pixel_scale, light)
+					_icon_rect_mask(image, mask, ox, oy, 7, 10, 2, 1, pixel_scale, light)
+				_:
+					_icon_px_mask(image, mask, ox, oy, 6, 8, pixel_scale, light)
+					_icon_px_mask(image, mask, ox, oy, 9, 8, pixel_scale, light)
+					_icon_rect_mask(image, mask, ox, oy, 7, 9, 3, 1, pixel_scale, light)
+			_draw_shadow_from_mask(image, mask, ox, oy, pixel_scale, 1, 1, Color(0, 0, 0, 0.22))
+			_draw_outline_from_mask(image, mask, ox, oy, pixel_scale, outline)
 		"ingredient":
 			_draw_badge(image, ox, oy, pixel_scale, Color(0.34, 0.22, 0.16))
 			match id:
@@ -5453,12 +5838,19 @@ func _clear_screen() -> void:
 	status_label = null
 	economy_label = null
 	cook_button = null
+	assistant_panel = null
+	assistant_icon_rect = null
+	assistant_name_label = null
+	assistant_bubble_label = null
 	pot_view = null
 	ingredient_buttons.clear()
 	seasoning_buttons.clear()
 	method_buttons.clear()
 	if is_instance_valid(pending_http_request):
 		pending_http_request.queue_free()
+	if is_instance_valid(assistant_http_request):
+		assistant_http_request.queue_free()
+	assistant_waiting = false
 	if is_instance_valid(day_review_http_request):
 		day_review_http_request.queue_free()
 	for child in get_children():
