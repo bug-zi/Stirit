@@ -1904,39 +1904,50 @@ func _build_library_panel_right() -> Control:
 
 	box.add_child(_make_label("食材 & 调料", 18, COLOR_SECONDARY))
 
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	box.add_child(scroll)
+	box.add_child(_make_label("主菜品", 16, Color(0.92, 0.95, 1.0)))
+	var ing_scroll := ScrollContainer.new()
+	ing_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ing_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ing_scroll.size_flags_stretch_ratio = 3.0
+	ing_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	ing_scroll.custom_minimum_size = Vector2(0, 160)
+	box.add_child(ing_scroll)
 
-	var content := VBoxContainer.new()
-	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 10)
-	scroll.add_child(content)
-
-	content.add_child(_make_label("主菜品", 16, Color(0.92, 0.95, 1.0)))
-	var ing_list := VBoxContainer.new()
-	ing_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	ing_list.add_theme_constant_override("separation", 8)
-	content.add_child(ing_list)
+	var ing_grid := GridContainer.new()
+	ing_grid.columns = 2
+	ing_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ing_grid.add_theme_constant_override("h_separation", 8)
+	ing_grid.add_theme_constant_override("v_separation", 8)
+	ing_scroll.add_child(ing_grid)
 
 	var ingredients := presented_ingredients if not presented_ingredients.is_empty() else INGREDIENTS
 	for item in ingredients:
 		var b := _make_library_item_button(item, "ingredient")
 		ingredient_buttons[str(item["id"])] = b
-		ing_list.add_child(b)
+		ing_grid.add_child(b)
 
-	content.add_child(_make_label("调料", 16, Color(0.92, 0.95, 1.0)))
-	var sea_list := VBoxContainer.new()
-	sea_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sea_list.add_theme_constant_override("separation", 8)
-	content.add_child(sea_list)
+	box.add_child(_make_separator())
+	box.add_child(_make_label("调料", 16, Color(0.92, 0.95, 1.0)))
+	var sea_scroll := ScrollContainer.new()
+	sea_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sea_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sea_scroll.size_flags_stretch_ratio = 2.0
+	sea_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sea_scroll.custom_minimum_size = Vector2(0, 150)
+	box.add_child(sea_scroll)
+
+	var sea_grid := GridContainer.new()
+	sea_grid.columns = 2
+	sea_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sea_grid.add_theme_constant_override("h_separation", 8)
+	sea_grid.add_theme_constant_override("v_separation", 8)
+	sea_scroll.add_child(sea_grid)
+
 	var seasonings := presented_seasonings if not presented_seasonings.is_empty() else SEASONINGS
 	for item in seasonings:
 		var b := _make_library_item_button(item, "seasoning")
 		seasoning_buttons[str(item["id"])] = b
-		sea_list.add_child(b)
+		sea_grid.add_child(b)
 
 	return panel
 
@@ -1969,32 +1980,47 @@ func _build_bottom_bar() -> Control:
 	return panel
 
 func _make_library_item_button(item: Dictionary, kind: String) -> Button:
-	var button := _make_button("", 18)
+	var button := _make_button("", 16)
 	button.toggle_mode = true
 	button.custom_minimum_size = Vector2(0, 56)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var row := HBoxContainer.new()
+	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 8
+	row.offset_top = 6
+	row.offset_right = -8
+	row.offset_bottom = -6
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	row.add_theme_constant_override("separation", 10)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 6)
 	button.add_child(row)
 
+	var icon_size := 30
 	var icon := TextureRect.new()
-	icon.texture = _get_item_icon(kind, str(item["id"]), 36)
-	icon.custom_minimum_size = Vector2(36, 36)
+	icon.texture = _get_item_icon(kind, str(item["id"]), icon_size)
+	icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	row.add_child(icon)
 
-	var name_label := _make_label(str(item["name"]), 18, COLOR_TEXT)
+	var name_label := _make_label(str(item["name"]), 16, COLOR_TEXT)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(name_label)
 
 	if kind == "ingredient" or kind == "seasoning":
 		var price := _price_for_item(item, kind)
-		var price_label := _make_label("￥%d" % price, 16, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_RIGHT)
-		price_label.custom_minimum_size = Vector2(66, 0)
+		var price_label := _make_label("￥%d" % price, 15, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_RIGHT)
+		price_label.custom_minimum_size = Vector2(44, 0)
+		price_label.size_flags_horizontal = Control.SIZE_SHRINK_END
+		price_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		price_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(price_label)
 		var tags_text := "、".join(item.get("tags", []))
 		button.tooltip_text = "%s\n￥%d\n%s" % [str(item.get("description", "")), price, tags_text]
@@ -3891,9 +3917,11 @@ func _stop_timer_pulse() -> void:
 		timer_label.scale = Vector2.ONE
 
 func _make_page() -> MarginContainer:
-	var background := ColorRect.new()
-	background.color = COLOR_BG
+	var background := TextureRect.new()
+	background.texture = _get_bg_base_texture()
 	background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	background.stretch_mode = TextureRect.STRETCH_SCALE
 	add_child(background)
 
 	if not is_instance_valid(_bg_overlay):
@@ -3903,7 +3931,7 @@ func _make_page() -> MarginContainer:
 		_bg_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 		_bg_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_bg_overlay.stretch_mode = TextureRect.STRETCH_TILE
-		_bg_overlay.modulate = Color(1, 1, 1, 0.12)
+		_bg_overlay.modulate = Color(1, 1, 1, 0.16)
 		_bg_overlay.offset_left = -64
 		_bg_overlay.offset_top = -64
 		_bg_overlay.offset_right = 64
@@ -3920,6 +3948,38 @@ func _make_page() -> MarginContainer:
 	return margin
 
 var _bg_texture_cache: Texture2D
+var _bg_base_texture_cache: Texture2D
+
+func _get_bg_base_texture() -> Texture2D:
+	if _bg_base_texture_cache:
+		return _bg_base_texture_cache
+	var s := 256
+	var img := Image.create(s, s, false, Image.FORMAT_RGBA8)
+	var rr := RandomNumberGenerator.new()
+	rr.seed = 973241
+	var top := Color(0.05, 0.055, 0.11, 1.0)
+	var bottom := Color(0.09, 0.10, 0.18, 1.0)
+	for y in range(s):
+		var v := float(y) / float(s - 1)
+		var base_y := top.lerp(bottom, v)
+		for x in range(s):
+			var u := float(x) / float(s - 1)
+			var dx := u - 0.5
+			var dy := v - 0.46
+			var dist2 := dx * dx + dy * dy
+			var vignette := clampf(1.0 - dist2 * 2.2, 0.0, 1.0)
+			var band := 0.5 + 0.5 * sin((u * 1.25 + v * 0.95) * TAU)
+			var n := (rr.randf() - 0.5) * 0.035
+			var lift := 0.035 * vignette + 0.012 * band + n
+			var c := Color(
+				clampf(base_y.r + lift, 0.0, 1.0),
+				clampf(base_y.g + lift, 0.0, 1.0),
+				clampf(base_y.b + lift * 1.15, 0.0, 1.0),
+				1.0
+			)
+			img.set_pixel(x, y, c)
+	_bg_base_texture_cache = ImageTexture.create_from_image(img)
+	return _bg_base_texture_cache
 
 func _get_bg_texture() -> Texture2D:
 	if _bg_texture_cache:
