@@ -187,12 +187,71 @@ const ORDERS := [
 	{"id": "boss_005", "customer_name": "另一个你", "role": "通宵后出现的精神分身", "avatar_key": "other_self", "request": "我想吃一份能让我继续干活，又能提醒我这不太正常的东西。", "difficulty": 5, "desired_tags": ["续命", "熬夜", "焦虑", "成熟", "风险"], "avoid_tags": ["太安稳", "太快乐"], "boss": true}
 ]
 
+const ABSTRACTION_LEVEL_MAX := 20
+
+const ORDER_ABSTRACTION_LEVELS := [
+	{"level": 1, "label": "具体需求", "pattern": "请给我一份{goal}的菜，像{anchor}，不要{avoid}。"},
+	{"level": 2, "label": "明确场景", "pattern": "我现在在{scene}，想吃点{goal}，口味别往{avoid}跑。"},
+	{"level": 3, "label": "场景暗示", "pattern": "做个能处理{mood}的东西，最好有{anchor}那种明确作用。"},
+	{"level": 4, "label": "功能转情绪", "pattern": "我需要{goal}，但它得藏在{texture}里，别太像任务说明。"},
+	{"level": 5, "label": "情绪明确", "pattern": "给我一口{scene}之后还能继续往前的感觉，方向是{mood}。"},
+	{"level": 6, "label": "情绪混合", "pattern": "把{anchor}压缩成一道菜：有{texture}，也有一点{contradiction}。"},
+	{"level": 7, "label": "需求藏半截", "pattern": "我说不清，只知道身体要{goal}，心里在躲{avoid}。"},
+	{"level": 8, "label": "隐喻需求", "pattern": "做一道像{symbol}旁边那点余温的菜，要能安放{mood}。"},
+	{"level": 9, "label": "松散隐喻", "pattern": "我想吃一种{texture}的答案，能把{contradiction}暂时讲圆。"},
+	{"level": 10, "label": "半抽象", "pattern": "给我一锅介于{anchor}和{symbol}之间的东西，别让它滑向{avoid}。"},
+	{"level": 11, "label": "抽象场", "pattern": "我需要一道能把{mood}折起来收好的菜，边缘最好有{texture}。"},
+	{"level": 12, "label": "反向表达", "pattern": "不要直接给我{goal}，给我它经过{symbol}之后留下的味道。"},
+	{"level": 13, "label": "情绪谜面", "pattern": "这单的谜面是{contradiction}，谜底请炒得像{texture}。"},
+	{"level": 14, "label": "意象主导", "pattern": "我想吃一口{symbol}正在降温的瞬间，别解释太多。"},
+	{"level": 15, "label": "弱线索", "pattern": "做个像{mood}背后那层薄雾的东西，能入口就算你赢。"},
+	{"level": 16, "label": "梦境逻辑", "pattern": "如果{symbol}会饿，它今天大概会点一份{texture}的沉默。"},
+	{"level": 17, "label": "诗性需求", "pattern": "请把{contradiction}炒成可以咀嚼的停顿，别让它太像现实。"},
+	{"level": 18, "label": "近乎抽象", "pattern": "我只想要一种从{symbol}里慢慢浮出来的方向，越少说明越好。"},
+	{"level": 19, "label": "极抽象", "pattern": "给我一口尚未命名的{texture}，让{mood}自己找到座位。"},
+	{"level": 20, "label": "完全抽象", "pattern": "我想吃到{symbol}还没变成语言以前的那一瞬间。"}
+]
+
+const NORMAL_ORDER_ARCHETYPES := [
+	{"key": "exam_cram", "customer_name": "准点崩溃者", "role": "考试前夜还在翻重点的人", "avatar_key": "exam_cram", "anchor": "考前能稳住手的早餐", "scene": "图书馆闭馆前的走廊", "goal": "提神、清醒、不要太油腻", "mood": "慌张但必须清醒", "texture": "清爽又有支撑感", "symbol": "准考证边角的折痕", "contradiction": "越紧张越要装作有计划", "desired_tags": ["早餐", "提神", "清醒", "克制"], "avoid_tags": ["太油腻", "过度刺激"]},
+	{"key": "deadline", "customer_name": "进度条守夜人", "role": "项目截止前还在改最后一版的人", "avatar_key": "deadline_watch", "anchor": "凌晨还能继续工作的续命餐", "scene": "只剩键盘声的宿舍", "goal": "续命、可靠、别太平淡", "mood": "疲惫里夹着焦虑", "texture": "能撑住人的热度", "symbol": "进度条最后那一小格", "contradiction": "快撑不住却还想交得漂亮", "desired_tags": ["续命", "熬夜", "焦虑", "可靠"], "avoid_tags": ["太平淡", "过度健康"]},
+	{"key": "workout", "customer_name": "热量谈判员", "role": "刚运动完又想奖励自己的人", "avatar_key": "workout_reward", "anchor": "跑完步之后不算白练的晚饭", "scene": "操场出口的路灯下", "goal": "饱腹、清爽、看起来健康", "mood": "想奖励自己但还要克制", "texture": "轻盈但不空", "symbol": "运动手环上的绿色圆环", "contradiction": "越自律越想放纵一点", "desired_tags": ["饱腹", "养生", "克制", "清爽"], "avoid_tags": ["负担", "罪恶"]},
+	{"key": "heartbreak", "customer_name": "体面失恋者", "role": "刚删完聊天记录的人", "avatar_key": "heartbreak", "anchor": "甜一点但不丢人的安慰", "scene": "雨停后的便利店门口", "goal": "安慰、温暖、甜但别过头", "mood": "难过但还想保持体面", "texture": "软一点的温柔", "symbol": "没有发出去的句号", "contradiction": "想被哄又不想承认", "desired_tags": ["安慰", "温暖", "甜", "克制"], "avoid_tags": ["过甜", "太热闹"]},
+	{"key": "budget", "customer_name": "月底防线", "role": "饭卡余额快见底的人", "avatar_key": "budget_guard", "anchor": "便宜又能顶住的正经饭", "scene": "食堂窗口快收摊的时候", "goal": "便宜、饱腹、稳定", "mood": "穷得清醒但不想认输", "texture": "踏实的重量", "symbol": "余额短信里的两位数", "contradiction": "预算很低但尊严还在", "desired_tags": ["便宜", "饱腹", "学生", "稳定"], "avoid_tags": ["过度精致", "负担"]},
+	{"key": "night_market", "customer_name": "夜市召唤师", "role": "校门口摊位忠实巡礼者", "avatar_key": "night_market", "anchor": "夜市摊灯刚亮时的快乐", "scene": "校门口最吵的那条街", "goal": "热闹、快乐、有一点罪恶", "mood": "想把今天过成节日", "texture": "热烈又冒烟", "symbol": "油锅上方的霓虹反光", "contradiction": "明知道会后悔但还是想笑", "desired_tags": ["夜市", "热烈", "快乐", "罪恶"], "avoid_tags": ["太健康", "克制过头"]},
+	{"key": "social_escape", "customer_name": "礼貌逃离者", "role": "刚从聚餐里撤退的人", "avatar_key": "social_escape", "anchor": "一个人吃也不尴尬的清爽餐", "scene": "电梯门合上的那一秒", "goal": "克制、清爽、温和", "mood": "终于安静但还要礼貌", "texture": "不打扰人的轻柔", "symbol": "已读不回的小红点", "contradiction": "想要热闹余温又怕被拉回去", "desired_tags": ["克制", "清爽", "温和", "安慰"], "avoid_tags": ["社交", "强烈"]},
+	{"key": "meeting_calm", "customer_name": "会议降温员", "role": "刚开完高压会的人", "avatar_key": "meeting_calm", "anchor": "能把火降下来的冷静餐", "scene": "会议室空调还没关的时候", "goal": "冷静、清爽、稳定", "mood": "火还没灭但必须正常说话", "texture": "凉一点的秩序", "symbol": "白板上没擦干净的箭头", "contradiction": "很想反驳但选择先喝水", "desired_tags": ["冷静", "清爽", "克制", "稳定"], "avoid_tags": ["刺激", "上头"]},
+	{"key": "creative_pitch", "customer_name": "故事包装师", "role": "正在给方案找卖点的人", "avatar_key": "pitch_story", "anchor": "听起来很有故事的校园怪菜", "scene": "路演前十分钟的后台", "goal": "校园感、冲击、快乐", "mood": "心虚但想显得很有创意", "texture": "亮眼但不失控", "symbol": "PPT 首页的巨大标题", "contradiction": "味道可以奇一点但逻辑要圆", "desired_tags": ["学生", "冲击", "快乐", "神秘"], "avoid_tags": ["太普通", "太家常"]},
+	{"key": "homesick", "customer_name": "远行新生", "role": "第一次离家很远的人", "avatar_key": "homesick", "anchor": "像家里厨房传出来的饭", "scene": "宿舍楼下安静的长椅", "goal": "家常、温暖、安全、顶饱", "mood": "想家但不想太伤感", "texture": "稳稳落地的热气", "symbol": "没拨出去的家里电话", "contradiction": "想独立又想被照顾", "desired_tags": ["家常", "温暖", "安全", "饱腹"], "avoid_tags": ["冰冷", "攻击性"]},
+	{"key": "heat_escape", "customer_name": "空调信徒", "role": "从闷热教室逃出来的人", "avatar_key": "heat_escape", "anchor": "能把夏天按暂停的清凉餐", "scene": "空调出风口正下方", "goal": "清凉、清爽、安慰", "mood": "被热到失去文明但还能恢复", "texture": "透明的凉意", "symbol": "杯壁上滑下来的水珠", "contradiction": "想降温又不想变得冷冰冰", "desired_tags": ["清凉", "清爽", "安慰", "冷静"], "avoid_tags": ["油腻", "热烈"]},
+	{"key": "midnight_phone", "customer_name": "再刷十分钟", "role": "短视频刷到凌晨的人", "avatar_key": "midnight_scroll", "anchor": "上头但明天不至于崩盘的宵夜", "scene": "手机电量只剩百分之九的床上", "goal": "上头、快乐、但要克制", "mood": "停不下来但知道不该继续", "texture": "亮一下又暗下去的刺激", "symbol": "刷新出来的下一条视频", "contradiction": "想快乐又怕明天更后悔", "desired_tags": ["上头", "快乐", "克制", "风险"], "avoid_tags": ["负担", "幻觉"]},
+	{"key": "code_clean", "customer_name": "重构洁癖", "role": "刚看完祖传脚本的人", "avatar_key": "code_clean", "anchor": "逻辑清楚但不无聊的工作餐", "scene": "屏幕里全是警告的工位", "goal": "稳定、可靠、清爽", "mood": "想把混乱整理到能运行", "texture": "干净的层次", "symbol": "终于变绿的测试结果", "contradiction": "讨厌混乱但也怕太死板", "desired_tags": ["稳定", "可靠", "成熟", "清爽"], "avoid_tags": ["混乱", "太幼稚"]},
+	{"key": "lab_failed", "customer_name": "第四次会成功", "role": "实验失败三次的理科生", "avatar_key": "lab_retry", "anchor": "失败之后还能再试一次的菜", "scene": "洗手池边的实验手套旁", "goal": "苦一点、提神、最后要治愈", "mood": "挫败但还没放弃", "texture": "先苦后亮", "symbol": "试管底部那点沉淀", "contradiction": "已经累了但还想相信数据", "desired_tags": ["苦", "清爽", "治愈", "提神"], "avoid_tags": ["摆烂", "过甜"]},
+	{"key": "adventure_menu", "customer_name": "隐藏菜单猎人", "role": "专门挑战奇怪搭配的人", "avatar_key": "adventure_menu", "anchor": "别人会犹豫但我会再点的怪菜", "scene": "菜单最下面那行小字前", "goal": "冒险、奇怪、刺激、还要快乐", "mood": "想被吓一下但不是被送走", "texture": "危险边缘的弹跳感", "symbol": "被圈起来的隐藏选项", "contradiction": "越不像饭越想证明它能吃", "desired_tags": ["冒险", "奇怪", "刺激", "快乐"], "avoid_tags": ["无聊", "太安全"]}
+]
+
+const BOSS_ORDER_ARCHETYPES := [
+	{"key": "ai_7", "customer_name": "小炒 AI-7", "role": "亲自下场的点单评价系统", "avatar_key": "ai_boss", "anchor": "人类崩溃和快乐的逻辑闭环", "scene": "评价系统短暂离线后的空白屏", "goal": "续命、快乐、风险和克制同时成立", "mood": "像算法第一次承认自己也会饿", "texture": "精确但带一点毛边", "symbol": "还没落下的评分印章", "contradiction": "越像答案越不像人类", "desired_tags": ["续命", "快乐", "风险", "克制", "神秘"], "avoid_tags": ["太平淡", "太安全"]},
+	{"key": "hackathon_judge", "customer_name": "黑客松评委", "role": "连续看了十个项目的人", "avatar_key": "judge", "anchor": "三分钟内能讲明白的校园奇迹", "scene": "投影仪刚连上的路演厅", "goal": "校园感、提神、笑点和入口都要有", "mood": "疲惫但还愿意被打动", "texture": "像演示成功那一秒的亮光", "symbol": "倒计时归零前的最后一页", "contradiction": "越像噱头越要能落地", "desired_tags": ["学生", "提神", "快乐", "可靠", "冲击"], "avoid_tags": ["太普通", "太危险"]},
+	{"key": "server_alert", "customer_name": "凌晨四点的服务器", "role": "刚报警的线上服务", "avatar_key": "server_alert", "anchor": "能降火但保留事故现场灵魂的补丁", "scene": "日志刷屏的凌晨四点", "goal": "冷静、续命、稳定运行", "mood": "红色告警里挤出来的一点理智", "texture": "低温金属边缘的热气", "symbol": "闪烁但没有熄灭的状态灯", "contradiction": "必须稳定却不能完全无事发生", "desired_tags": ["冷静", "续命", "稳定", "风险", "克制"], "avoid_tags": ["混乱", "过度热烈"]},
+	{"key": "future_principal", "customer_name": "未来校长", "role": "巡视夜市的神秘人物", "avatar_key": "principal", "anchor": "能代表未来校园夜市精神的招牌菜", "scene": "校门口灯牌全部亮起之后", "goal": "便宜、热闹、荒诞但不丢人", "mood": "像规章制度偷偷学会了烟火气", "texture": "有秩序的喧闹", "symbol": "盖着校印的夜市小票", "contradiction": "越离谱越要像传统", "desired_tags": ["便宜", "热烈", "夜市", "神秘", "克制"], "avoid_tags": ["太幼稚", "过度负担"]},
+	{"key": "other_self", "customer_name": "另一个你", "role": "通宵后出现的精神分身", "avatar_key": "other_self", "anchor": "继续干活和知道不正常之间的裂缝", "scene": "屏幕反光里多出来的那张脸", "goal": "续命、熬夜、焦虑和成熟同时在线", "mood": "清醒得不像自己", "texture": "硬撑出来的柔软", "symbol": "被自己盯住的光标", "contradiction": "越需要休息越想证明还能做完", "desired_tags": ["续命", "熬夜", "焦虑", "成熟", "风险"], "avoid_tags": ["太安稳", "太快乐"]},
+	{"key": "canteen_oracle", "customer_name": "食堂预言家", "role": "能从菜单看出命运的人", "avatar_key": "canteen_oracle", "anchor": "像明天运势被炒进锅里的暗示", "scene": "打饭窗口玻璃后的雾气", "goal": "神秘、家常、稳定但带点预兆", "mood": "普通饭点里忽然出现命运感", "texture": "朴素下面藏着回声", "symbol": "勺子背面反出来的未来", "contradiction": "越家常越像玄学", "desired_tags": ["神秘", "家常", "稳定", "温暖", "克制"], "avoid_tags": ["太浮夸", "纯恶搞"]},
+	{"key": "club_legend", "customer_name": "社团传说", "role": "每个活动都出现过的人", "avatar_key": "club_legend", "anchor": "能让所有摊位都认得你的味道", "scene": "活动中心灯光最乱的角落", "goal": "校园、热闹、快乐和一点冒险", "mood": "像报名表自己长出了故事", "texture": "彩色噪点里的节奏", "symbol": "被盖满章的活动手册", "contradiction": "越像凑热闹越要有真正记忆点", "desired_tags": ["学生", "热烈", "快乐", "冒险", "夜市"], "avoid_tags": ["孤独", "太安全"]},
+	{"key": "deadline_deity", "customer_name": "截稿神明", "role": "只在最后十分钟显灵的人", "avatar_key": "deadline_deity", "anchor": "把最后十分钟延展成一整夜的奇迹", "scene": "提交按钮旁边的倒计时", "goal": "提神、续命、冲击和可靠", "mood": "绝望里突然亮起快捷键", "texture": "锋利又能咽下去", "symbol": "还没保存的星号", "contradiction": "越混乱越不能失败", "desired_tags": ["提神", "续命", "冲击", "可靠", "焦虑"], "avoid_tags": ["温吞", "太安全"]},
+	{"key": "night_market_ghost", "customer_name": "夜市幽灵", "role": "收摊后还在排队的人", "avatar_key": "night_ghost", "anchor": "摊灯灭了以后还留在空气里的那口香", "scene": "油锅冷却后的校门口", "goal": "夜市、罪恶、温暖和一点神秘", "mood": "热闹散场之后的余温", "texture": "烟火气的残影", "symbol": "空签子旁边的影子", "contradiction": "已经结束却还让人想回来", "desired_tags": ["夜市", "罪恶", "温暖", "神秘", "快乐"], "avoid_tags": ["冰冷", "太朴素"]},
+	{"key": "final_customer", "customer_name": "第零位顾客", "role": "菜单之外的最终点单人", "avatar_key": "final_customer", "anchor": "所有需求还没有分化之前的一锅", "scene": "开店前一秒和收摊后一秒重叠的地方", "goal": "离谱、治愈、风险和自洽", "mood": "像游戏规则忽然看向玩家", "texture": "无法命名但很有重量", "symbol": "还没被写进订单的空行", "contradiction": "越抽象越要能被吃懂", "desired_tags": ["冒险", "治愈", "风险", "神秘", "克制"], "avoid_tags": ["平庸", "纯恶搞"]}
+]
+
 var rng := RandomNumberGenerator.new()
 var screen_state := "start"
 var order_index := 0
 var current_order := {}
 var current_customer_variant_index := 0
 var normal_order_pool := []
+var normal_order_pool_level := 1
+var generated_normal_orders: Array = []
+var generated_boss_orders: Array = []
 var presented_ingredients: Array = []
 var presented_seasonings: Array = []
 var selected_ingredient_ids := []
@@ -216,6 +275,8 @@ var pending_buff_choices := []
 var mistake_insurance_used := false
 var pending_payload := {}
 var pending_http_request: HTTPRequest
+var day_review_label: Label
+var day_review_http_request: HTTPRequest
 var timer_label: Label
 var supabase_config := {}
 var auth_session := {}
@@ -239,6 +300,8 @@ var ai_model_input: LineEdit
 
 func _ready() -> void:
 	rng.randomize()
+	generated_normal_orders = _build_normal_order_library()
+	generated_boss_orders = _build_boss_order_library()
 	ai_config = _load_user_ai_config()
 	_ensure_item_icons_on_disk()
 	_show_start_screen()
@@ -316,12 +379,36 @@ class PotView:
 	var method_id := ""
 	var phase := 0.0
 	var icon_provider: Callable
+	var drop_receiver: Callable
 	var item_meta: Dictionary = {}
 	var add_events: Array = []
 
 	func _ready() -> void:
 		set_process(true)
 		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+		if typeof(data) != TYPE_DICTIONARY:
+			return false
+		var d: Dictionary = data
+		if not d.has("kind") or not d.has("id"):
+			return false
+		var kind := str(d.get("kind", ""))
+		if kind != "ingredient" and kind != "seasoning":
+			return false
+		return drop_receiver.is_valid()
+
+	func _drop_data(_at_position: Vector2, data: Variant) -> void:
+		if typeof(data) != TYPE_DICTIONARY:
+			return
+		var d: Dictionary = data
+		var kind := str(d.get("kind", ""))
+		var id := str(d.get("id", ""))
+		if kind == "" or id == "":
+			return
+		if drop_receiver.is_valid():
+			drop_receiver.call(kind, id)
 
 	func set_state(new_ingredient_ids: Array, new_seasoning_ids: Array, new_method_id: String) -> void:
 		for old_id in ingredient_ids:
@@ -1144,7 +1231,7 @@ func _build_home_info_panel() -> Control:
 
 	if home_tab == "rules":
 		content.add_child(_make_label("玩法说明", 32, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_CENTER))
-		content.add_child(_make_home_paragraph("1. API 配置是可选项；不配置也能玩，出锅时使用本地评分。\n2. 每单顾客会提出抽象需求。\n3. 选择 2-3 个食材、1-2 个调料和 1 种烹饪方式。\n4. 配置 API 后，AI 会根据顾客需求和菜品语义评分。\n5. 一局 5 单，第 5 单必出 Boss。"))
+		content.add_child(_make_home_paragraph("1. API 配置是可选项；不配置也能玩，出锅时使用本地评分。\n2. 每单顾客会提出抽象需求。\n3. 选择 2-3 个食材、1-2 个调料和 1 种烹饪方式。\n4. 配置 API 后，AI 会根据顾客需求和菜品语义评分。\n5. 一天 5 单，每天第 5 单必出 Boss。\n6. 第二十天游戏通关"))
 	else:
 		content.add_child(_make_label("游戏概况", 32, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_CENTER))
 		content.add_child(_make_home_paragraph("你经营一家未来校园夜市里的怪菜摊。顾客说不清自己想吃什么，只能给出情绪、场景和一点离谱暗示。你的任务是把这些需求翻译成食材组合，让小炒 AI-7 判断这锅东西到底有没有读懂人。"))
@@ -1377,7 +1464,7 @@ func _start_game() -> void:
 	active_buffs.clear()
 	pending_buff_choices.clear()
 	mistake_insurance_used = false
-	normal_order_pool = _get_orders(false)
+	_refresh_normal_order_pool_for_day()
 	_pick_next_order()
 	if _should_play_approach_for_order():
 		_show_approach_screen()
@@ -1396,8 +1483,9 @@ func _pick_next_order() -> void:
 		var boss_orders := _get_orders(true)
 		current_order = boss_orders[rng.randi_range(0, boss_orders.size() - 1)]
 	else:
-		if normal_order_pool.is_empty():
-			normal_order_pool = _get_orders(false)
+		var target_level := _abstraction_level_for_day(day_index)
+		if normal_order_pool.is_empty() or normal_order_pool_level != target_level:
+			_refresh_normal_order_pool_for_day()
 		var pool_index := rng.randi_range(0, normal_order_pool.size() - 1)
 		current_order = normal_order_pool[pool_index]
 		normal_order_pool.remove_at(pool_index)
@@ -1408,7 +1496,7 @@ func _pick_next_order() -> void:
 		return
 	var desired_tags: Array = current_order.get("desired_tags", [])
 	presented_ingredients = _roll_presented_items(INGREDIENTS, desired_tags, 12, 6)
-	presented_seasonings = _roll_presented_items(SEASONINGS, desired_tags, 10, 4)
+	presented_seasonings = _roll_presented_items(SEASONINGS, desired_tags, 8, 4)
 
 func _roll_presented_items(source: Array, desired_tags: Array, total: int, min_relevant: int) -> Array:
 	var relevant: Array = []
@@ -1869,6 +1957,7 @@ func _build_pot_panel_center() -> Control:
 	pot_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pot_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	pot_view.icon_provider = Callable(self, "_get_item_icon")
+	pot_view.drop_receiver = Callable(self, "_on_pot_drop")
 	var pot_layer := Control.new()
 	pot_layer.custom_minimum_size = pot_view.custom_minimum_size
 	pot_layer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1880,6 +1969,7 @@ func _build_pot_panel_center() -> Control:
 
 	var steam_particles := SteamParticles.new()
 	steam_particles.set_anchors_preset(Control.PRESET_FULL_RECT)
+	steam_particles.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pot_layer.add_child(steam_particles)
 
 	status_label = _make_label("", 16, COLOR_TEXT_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
@@ -1891,6 +1981,21 @@ func _build_pot_panel_center() -> Control:
 	box.add_child(economy_label)
 
 	return panel
+
+func _on_pot_drop(kind: String, item_id: String) -> void:
+	var id := str(item_id)
+	if kind == "ingredient":
+		if ingredient_buttons.has(id):
+			var b = ingredient_buttons[id]
+			if b is Button:
+				(b as Button).set_pressed_no_signal(true)
+		_on_toggle_ingredient(true, id)
+	elif kind == "seasoning":
+		if seasoning_buttons.has(id):
+			var b = seasoning_buttons[id]
+			if b is Button:
+				(b as Button).set_pressed_no_signal(true)
+		_on_toggle_seasoning(true, id)
 
 func _build_library_panel_right() -> Control:
 	var panel := _make_panel(Color(0.14, 0.145, 0.23), Color(0.34, 0.38, 0.54), 12)
@@ -1980,10 +2085,15 @@ func _build_bottom_bar() -> Control:
 	return panel
 
 func _make_library_item_button(item: Dictionary, kind: String) -> Button:
-	var button := _make_button("", 16)
+	var button := DraggableLibraryButton.new()
+	button.add_theme_font_size_override("font_size", 16)
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_apply_button_default(button)
 	button.toggle_mode = true
 	button.custom_minimum_size = Vector2(0, 56)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.drag_kind = kind
+	button.drag_id = str(item["id"])
 
 	var row := HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -2000,6 +2110,7 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 	var icon_size := 30
 	var icon := TextureRect.new()
 	icon.texture = _get_item_icon(kind, str(item["id"]), icon_size)
+	button.drag_icon = icon.texture
 	icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -2008,6 +2119,7 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 	row.add_child(icon)
 
 	var name_label := _make_label(str(item["name"]), 16, COLOR_TEXT)
+	button.drag_title = str(item["name"])
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -2016,6 +2128,7 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 
 	if kind == "ingredient" or kind == "seasoning":
 		var price := _price_for_item(item, kind)
+		button.drag_price = "￥%d" % price
 		var price_label := _make_label("￥%d" % price, 15, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_RIGHT)
 		price_label.custom_minimum_size = Vector2(44, 0)
 		price_label.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -2423,14 +2536,25 @@ func _show_result_screen(result: Dictionary) -> void:
 	stamp.modulate = Color(1, 1, 1, 0)
 	stamp.scale = Vector2(0.3, 0.3)
 	right_box.add_child(stamp)
+	var review_scroll := ScrollContainer.new()
+	review_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	review_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	right_box.add_child(review_scroll)
+	var review_box := VBoxContainer.new()
+	review_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_box.add_theme_constant_override("separation", 14)
+	review_scroll.add_child(review_box)
 	var comment := _make_label("AI 点评：\n%s" % str(result["comment"]), 20, Color(0.93, 0.96, 1.0))
 	comment.modulate = Color(1, 1, 1, 0)
 	comment.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	right_box.add_child(comment)
+	comment.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_box.add_child(comment)
 	var reaction := _make_label("顾客反应：\n%s" % str(result["customer_reaction"]), 20, Color(0.82, 0.9, 0.98))
 	reaction.modulate = Color(1, 1, 1, 0)
 	reaction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	right_box.add_child(reaction)
+	reaction.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	review_box.add_child(reaction)
 
 	var flash := ColorRect.new()
 	flash.color = Color(1.0, 0.88, 0.3, 0.0)
@@ -2528,6 +2652,37 @@ func _show_summary_screen() -> void:
 		var result: Dictionary = round_results[index]
 		var line := "%d. %s  %s  %d 分  净收益 %+d" % [index + 1, result["dish_name"], result["grade"], result["total_score"], result["net_profit"]]
 		list.add_child(_make_label(line, 18, Color(0.78, 0.84, 0.92), HORIZONTAL_ALIGNMENT_CENTER))
+
+	var grade_counts := {"S": 0, "A": 0, "B": 0, "C": 0, "D": 0, "F": 0}
+	var profit_total := 0
+	for result in round_results:
+		var g := str(result.get("grade", "F"))
+		if grade_counts.has(g):
+			grade_counts[g] = int(grade_counts[g]) + 1
+		else:
+			grade_counts[g] = 1
+		profit_total += int(result.get("net_profit", 0))
+
+	var ai_panel := _make_panel(Color(0.11, 0.115, 0.18), Color(0.34, 0.38, 0.54), 12)
+	ai_panel.custom_minimum_size = Vector2(780, 150)
+	box.add_child(ai_panel)
+	var ai_box := VBoxContainer.new()
+	ai_box.add_theme_constant_override("separation", 8)
+	ai_panel.add_child(ai_box)
+	ai_box.add_child(_make_label("小炒 AI-7 · 日结评价", 20, Color(0.92, 0.95, 1.0), HORIZONTAL_ALIGNMENT_CENTER))
+	var day_review_scroll := ScrollContainer.new()
+	day_review_scroll.custom_minimum_size = Vector2(0, 104)
+	day_review_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	day_review_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	ai_box.add_child(day_review_scroll)
+	var day_review_box := VBoxContainer.new()
+	day_review_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	day_review_scroll.add_child(day_review_box)
+	day_review_label = _make_label(_local_day_review_text(average, grade_counts, best, profit_total), 18, Color(0.88, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	day_review_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	day_review_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	day_review_box.add_child(day_review_label)
+	_request_ai_day_review(_build_day_review_payload(average, grade_counts, best, profit_total))
 
 	var continue_button := _make_button("继续营业", 24)
 	continue_button.custom_minimum_size = Vector2(240, 56)
@@ -3185,7 +3340,7 @@ func _advance_after_result() -> void:
 
 func _start_next_day() -> void:
 	order_index = 0
-	normal_order_pool = _get_orders(false)
+	_refresh_normal_order_pool_for_day()
 	_pick_next_order()
 	if _should_play_approach_for_order():
 		_show_approach_screen()
@@ -3468,9 +3623,9 @@ func _calculate_selection_cost() -> int:
 	return max(0, cost)
 
 func _grade_for_score(score: int) -> String:
-	if score >= 90:
+	if score >= 88:
 		return "S"
-	if score >= 80:
+	if score >= 78:
 		return "A"
 	if score >= 70:
 		return "B"
@@ -3479,6 +3634,126 @@ func _grade_for_score(score: int) -> String:
 	if score >= 45:
 		return "D"
 	return "F"
+
+func _local_day_review_text(average: int, grade_counts: Dictionary, best: Dictionary, profit_total: int) -> String:
+	var top := str(best.get("dish_name", "暂无"))
+	var top_score := int(best.get("total_score", 0))
+	var s_count := int(grade_counts.get("S", 0))
+	var a_count := int(grade_counts.get("A", 0))
+	var b_count := int(grade_counts.get("B", 0))
+	var core := ""
+	if average >= 88:
+		core = "今天这摊有点离谱地稳：锅不怕怪，怕的是你不继续炒。"
+	elif average >= 78:
+		core = "整体方向是对的，怪得有节制；再大胆一点就能更像招牌。"
+	elif average >= 70:
+		core = "有几单是对味的，但整体还在“能解释”和“真好吃”之间反复横跳。"
+	elif average >= 60:
+		core = "你在努力理解顾客，但锅里还缺一个能把情绪翻译成味道的关键选择。"
+	else:
+		core = "今天的锅像在复盘人生：能动，但不太想动。先把命题命中做扎实。"
+	var hits := "S×%d A×%d B×%d" % [s_count, a_count, b_count]
+	return "%s\n本日：平均 %d 分（%s），最高单：%s / %d 分，净收益 %+d。" % [core, average, hits, top, top_score, profit_total]
+
+func _build_day_review_payload(average: int, grade_counts: Dictionary, best: Dictionary, profit_total: int) -> Dictionary:
+	var compact_results: Array = []
+	for i in range(round_results.size()):
+		var r: Dictionary = round_results[i]
+		compact_results.append({
+			"index": i + 1,
+			"dish_name": str(r.get("dish_name", "")),
+			"grade": str(r.get("grade", "")),
+			"total_score": int(r.get("total_score", 0)),
+			"net_profit": int(r.get("net_profit", 0))
+		})
+	return {
+		"prompt": "你是“小炒 AI-7”的日结点评模块。根据输入数据，给出一段不超过 120 字的中文日结评价，语气毒舌但友好，能点出亮点与短板，并给出一句可执行建议。只返回 JSON，不要输出额外解释。返回格式：{\"summary\":\"...\",\"advice\":\"...\"}。",
+		"day_summary": {
+			"day_index": day_index,
+			"orders": round_results.size(),
+			"total_score": total_score,
+			"average_score": average,
+			"profit_total": profit_total,
+			"best_dish": str(best.get("dish_name", "")),
+			"best_score": int(best.get("total_score", 0)),
+			"grade_counts": grade_counts
+		},
+		"results": compact_results,
+		"return_json_only": true
+	}
+
+func _request_ai_day_review(payload: Dictionary) -> void:
+	if not is_instance_valid(day_review_label):
+		return
+	var active_ai_config := _load_ai_config()
+	var endpoint := str(active_ai_config.get("endpoint", "")).strip_edges()
+	if endpoint == "":
+		return
+	if is_instance_valid(day_review_http_request):
+		day_review_http_request.queue_free()
+	day_review_http_request = HTTPRequest.new()
+	day_review_http_request.timeout = AI_TIMEOUT_SECONDS
+	add_child(day_review_http_request)
+	day_review_http_request.request_completed.connect(_on_ai_day_review_completed)
+
+	var headers := ["Content-Type: application/json"]
+	var token := str(active_ai_config.get("api_key", active_ai_config.get("token", ""))).strip_edges()
+	if token != "":
+		headers.append("Authorization: Bearer %s" % token)
+
+	var body = payload
+	if active_ai_config.get("mode", "legacy") == "chat":
+		body = {
+			"model": str(active_ai_config.get("model", "")).strip_edges(),
+			"messages": [
+				{"role": "system", "content": str(payload.get("prompt", ""))},
+				{"role": "user", "content": JSON.stringify({"day_summary": payload.get("day_summary", {}), "results": payload.get("results", []), "return_json_only": true})}
+			],
+			"temperature": 0.7
+		}
+	var body_json := JSON.stringify(body)
+	var err := day_review_http_request.request(endpoint, headers, HTTPClient.METHOD_POST, body_json)
+	if err != OK:
+		if is_instance_valid(day_review_http_request):
+			day_review_http_request.queue_free()
+
+func _sanitize_ai_day_review(raw: Dictionary) -> Dictionary:
+	if not raw.has("summary") or not raw.has("advice"):
+		return {}
+	var summary := str(raw.get("summary", "")).strip_edges()
+	var advice := str(raw.get("advice", "")).strip_edges()
+	if summary == "" or advice == "":
+		return {}
+	if summary.length() > 160:
+		summary = summary.substr(0, 160)
+	if advice.length() > 120:
+		advice = advice.substr(0, 120)
+	return {"summary": summary, "advice": advice}
+
+func _on_ai_day_review_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if is_instance_valid(day_review_http_request):
+		day_review_http_request.queue_free()
+	if not is_instance_valid(day_review_label):
+		return
+	if result != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300:
+		return
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	var obj: Dictionary = parsed
+	if obj.has("choices") and typeof(obj["choices"]) == TYPE_ARRAY and obj["choices"].size() > 0:
+		var first_choice = obj["choices"][0]
+		if typeof(first_choice) == TYPE_DICTIONARY and first_choice.has("message"):
+			var message = first_choice["message"]
+			if typeof(message) == TYPE_DICTIONARY:
+				var content := str(message.get("content", "")).strip_edges()
+				var parsed_content = JSON.parse_string(_extract_json_text(content))
+				if typeof(parsed_content) == TYPE_DICTIONARY:
+					obj = parsed_content
+	var review := _sanitize_ai_day_review(obj)
+	if review.is_empty():
+		return
+	day_review_label.text = "%s\n建议：%s" % [str(review["summary"]), str(review["advice"])]
 
 func _is_selection_valid() -> bool:
 	return selected_ingredient_ids.size() >= INGREDIENT_MIN and selected_ingredient_ids.size() <= INGREDIENT_MAX and selected_seasoning_ids.size() >= SEASONING_MIN and selected_seasoning_ids.size() <= SEASONING_MAX and selected_method_id != ""
@@ -3560,12 +3835,98 @@ func _pick_unselected(source: Array, selected_ids: Array) -> Dictionary:
 		return {}
 	return available[rng.randi_range(0, available.size() - 1)]
 
-func _get_orders(want_boss: bool) -> Array:
+func _build_normal_order_library() -> Array:
 	var orders := []
-	for order in ORDERS:
-		if bool(order["boss"]) == want_boss:
+	for level_data in ORDER_ABSTRACTION_LEVELS:
+		var level := int(level_data.get("level", 1))
+		var pattern := str(level_data.get("pattern", ""))
+		var label := str(level_data.get("label", ""))
+		for i in range(NORMAL_ORDER_ARCHETYPES.size()):
+			var archetype: Dictionary = NORMAL_ORDER_ARCHETYPES[i]
+			var desired_tags: Array = archetype.get("desired_tags", [])
+			var avoid_tags: Array = archetype.get("avoid_tags", [])
+			var difficulty := clampi(2 + int(floor(float(level - 1) / 7.0)), 2, 4)
+			orders.append({
+				"id": "normal_l%02d_%02d" % [level, i + 1],
+				"customer_name": str(archetype.get("customer_name", "")),
+				"role": str(archetype.get("role", "")),
+				"avatar_key": str(archetype.get("avatar_key", "")),
+				"request": _format_order_request(pattern, archetype),
+				"difficulty": difficulty,
+				"desired_tags": desired_tags.duplicate(),
+				"avoid_tags": avoid_tags.duplicate(),
+				"boss": false,
+				"abstraction_level": level,
+				"abstraction_label": label
+			})
+	return orders
+
+func _build_boss_order_library() -> Array:
+	var orders := []
+	for level in range(18, ABSTRACTION_LEVEL_MAX + 1):
+		var level_data := _get_abstraction_level_data(level)
+		var pattern := str(level_data.get("pattern", ""))
+		var label := str(level_data.get("label", ""))
+		for i in range(BOSS_ORDER_ARCHETYPES.size()):
+			var archetype: Dictionary = BOSS_ORDER_ARCHETYPES[i]
+			var desired_tags: Array = archetype.get("desired_tags", [])
+			var avoid_tags: Array = archetype.get("avoid_tags", [])
+			orders.append({
+				"id": "boss_l%02d_%02d" % [level, i + 1],
+				"customer_name": str(archetype.get("customer_name", "")),
+				"role": str(archetype.get("role", "")),
+				"avatar_key": str(archetype.get("avatar_key", "")),
+				"request": _format_order_request(pattern, archetype),
+				"difficulty": 5,
+				"desired_tags": desired_tags.duplicate(),
+				"avoid_tags": avoid_tags.duplicate(),
+				"boss": true,
+				"abstraction_level": level,
+				"abstraction_label": label
+			})
+	return orders
+
+func _format_order_request(pattern: String, archetype: Dictionary) -> String:
+	var text := pattern
+	for key in ["anchor", "scene", "goal", "mood", "texture", "symbol", "contradiction", "avoid"]:
+		var value := str(archetype.get(key, ""))
+		if key == "avoid" and value == "":
+			var avoid_tags: Array = archetype.get("avoid_tags", [])
+			value = "、".join(avoid_tags)
+		text = text.replace("{%s}" % key, value)
+	return text
+
+func _get_abstraction_level_data(level: int) -> Dictionary:
+	for level_data in ORDER_ABSTRACTION_LEVELS:
+		if int(level_data.get("level", 1)) == level:
+			return level_data
+	return ORDER_ABSTRACTION_LEVELS[ORDER_ABSTRACTION_LEVELS.size() - 1]
+
+func _abstraction_level_for_day(day: int) -> int:
+	return clampi(day, 1, ABSTRACTION_LEVEL_MAX)
+
+func _refresh_normal_order_pool_for_day() -> void:
+	day_index = int(floor(float(completed_orders) / float(TOTAL_ORDERS))) + 1
+	normal_order_pool_level = _abstraction_level_for_day(day_index)
+	normal_order_pool = _get_normal_orders_for_level(normal_order_pool_level)
+
+func _get_normal_orders_for_level(level: int) -> Array:
+	if generated_normal_orders.is_empty():
+		generated_normal_orders = _build_normal_order_library()
+	var orders := []
+	for order in generated_normal_orders:
+		if int(order.get("abstraction_level", 1)) == level:
 			orders.append(order)
 	return orders
+
+func _get_orders(want_boss: bool) -> Array:
+	if not want_boss:
+		if generated_normal_orders.is_empty():
+			generated_normal_orders = _build_normal_order_library()
+		return generated_normal_orders.duplicate()
+	if generated_boss_orders.is_empty():
+		generated_boss_orders = _build_boss_order_library()
+	return generated_boss_orders.duplicate()
 
 func _get_best_result() -> Dictionary:
 	var best := {}
@@ -3998,6 +4359,62 @@ func _get_bg_texture() -> Texture2D:
 	_bg_texture_cache = ImageTexture.create_from_image(img)
 	return _bg_texture_cache
 
+class DraggableLibraryButton:
+	extends Button
+	var drag_kind := ""
+	var drag_id := ""
+	var drag_icon: Texture2D
+	var drag_title := ""
+	var drag_price := ""
+
+	func _get_drag_data(_at_position: Vector2) -> Variant:
+		var preview := PanelContainer.new()
+		preview.custom_minimum_size = Vector2(220, 52)
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.08, 0.09, 0.16, 0.92)
+		style.border_color = Color(0.52, 0.56, 0.78, 0.9)
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.corner_radius_top_left = 12
+		style.corner_radius_top_right = 12
+		style.corner_radius_bottom_left = 12
+		style.corner_radius_bottom_right = 12
+		preview.add_theme_stylebox_override("panel", style)
+
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		row.offset_left = 10
+		row.offset_top = 8
+		row.offset_right = -10
+		row.offset_bottom = -8
+		row.set_anchors_preset(Control.PRESET_FULL_RECT)
+		preview.add_child(row)
+
+		if drag_icon is Texture2D:
+			var icon_rect := TextureRect.new()
+			icon_rect.texture = drag_icon
+			icon_rect.custom_minimum_size = Vector2(34, 34)
+			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			row.add_child(icon_rect)
+
+		var label := Label.new()
+		var txt := drag_title
+		if drag_price != "":
+			txt = "%s %s" % [txt, drag_price]
+		label.text = txt
+		label.add_theme_font_size_override("font_size", 18)
+		label.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.clip_text = true
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(label)
+
+		set_drag_preview(preview)
+		return {"kind": drag_kind, "id": drag_id}
+
 func _process_bg_movement(delta: float) -> void:
 	if not is_instance_valid(_bg_overlay):
 		return
@@ -4227,31 +4644,53 @@ func _set_number_label(value: float, label: Label, format_text: String) -> void:
 		return
 	label.text = format_text % int(round(value))
 
+const SFX_DEFS := {
+	"select": {"paths": ["res://assets/sfx/select.wav"], "volume_db": -10.0, "pitch_min": 0.96, "pitch_max": 1.04, "cooldown_ms": 35},
+	"cook": {"paths": ["res://assets/sfx/cook.wav"], "volume_db": -8.0, "pitch_min": 0.98, "pitch_max": 1.02, "cooldown_ms": 120},
+	"score": {"paths": ["res://assets/sfx/score.wav"], "volume_db": -10.0, "pitch_min": 0.98, "pitch_max": 1.02, "cooldown_ms": 45},
+	"stamp": {"paths": ["res://assets/sfx/stamp.wav"], "volume_db": -6.0, "pitch_min": 0.98, "pitch_max": 1.02, "cooldown_ms": 120},
+	"coin": {"paths": ["res://assets/sfx/coin.wav"], "volume_db": -7.0, "pitch_min": 0.92, "pitch_max": 1.08, "cooldown_ms": 60},
+	"countdown": {"paths": ["res://assets/sfx/countdown.wav"], "volume_db": -12.0, "pitch_min": 0.99, "pitch_max": 1.01, "cooldown_ms": 180}
+}
+var _sfx_stream_cache: Dictionary = {}
+var _sfx_last_played_ms: Dictionary = {}
+
 func _play_sfx(key: String) -> void:
-	var path := ""
-	match key:
-		"select":
-			path = "res://assets/sfx/select.wav"
-		"cook":
-			path = "res://assets/sfx/cook.wav"
-		"score":
-			path = "res://assets/sfx/score.wav"
-		"stamp":
-			path = "res://assets/sfx/stamp.wav"
-		"coin":
-			path = "res://assets/sfx/coin.wav"
-		"countdown":
-			path = "res://assets/sfx/countdown.wav"
-		_:
-			path = ""
-	if path == "" or not ResourceLoader.exists(path):
+	if not SFX_DEFS.has(key):
 		return
-	var stream := load(path)
+	var def = SFX_DEFS[key]
+	var cooldown_ms: int = int(def.get("cooldown_ms", 0))
+	if cooldown_ms > 0:
+		var now_ms: int = int(Time.get_ticks_msec())
+		var last_ms: int = int(_sfx_last_played_ms.get(key, -1000000))
+		if now_ms - last_ms < cooldown_ms:
+			return
+		_sfx_last_played_ms[key] = now_ms
+
+	var paths: Array = def.get("paths", [])
+	if paths.is_empty():
+		return
+	var pick := str(paths[rng.randi_range(0, paths.size() - 1)])
+	if pick == "" or not ResourceLoader.exists(pick):
+		return
+	var stream = _sfx_stream_cache.get(pick)
+	if not is_instance_valid(stream):
+		stream = load(pick)
+		_sfx_stream_cache[pick] = stream
 	if not (stream is AudioStream):
 		return
+
 	var player := AudioStreamPlayer.new()
-	player.stream = stream
-	player.bus = "Master"
+	player.stream = stream as AudioStream
+	var bus_name := "Master"
+	if AudioServer.get_bus_index("SFX") != -1:
+		bus_name = "SFX"
+	player.bus = bus_name
+	var volume_db: float = float(def.get("volume_db", 0.0))
+	player.volume_db = volume_db
+	var pmin: float = float(def.get("pitch_min", 1.0))
+	var pmax: float = float(def.get("pitch_max", 1.0))
+	player.pitch_scale = rng.randf_range(pmin, pmax) if pmax > pmin else pmin
 	add_child(player)
 	player.finished.connect(player.queue_free)
 	player.play()
@@ -4987,6 +5426,7 @@ func _clear_screen() -> void:
 	customer_body_rect = null
 	customer_request_label = null
 	customer_signature_label = null
+	day_review_label = null
 	selected_chips_box = null
 	status_label = null
 	economy_label = null
@@ -4997,6 +5437,8 @@ func _clear_screen() -> void:
 	method_buttons.clear()
 	if is_instance_valid(pending_http_request):
 		pending_http_request.queue_free()
+	if is_instance_valid(day_review_http_request):
+		day_review_http_request.queue_free()
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
