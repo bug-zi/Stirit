@@ -1750,6 +1750,9 @@ func _build_customer_panel_left() -> Control:
 				var body := panel.find_child("Body", true, false)
 				if body is TextureRect:
 					customer_body_rect = body as TextureRect
+					customer_body_rect.custom_minimum_size = Vector2(240, 240)
+					customer_body_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+					customer_body_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 					customer_body_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 				var signature := panel.find_child("Signature", true, false)
@@ -1812,7 +1815,7 @@ func _build_customer_panel_left() -> Control:
 	customer_body_rect = TextureRect.new()
 	customer_body_rect.custom_minimum_size = Vector2(240, 240)
 	customer_body_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	customer_body_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	customer_body_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 	customer_body_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	body_center.add_child(customer_body_rect)
 
@@ -3186,7 +3189,7 @@ func _choose_buff(buff_id: String) -> void:
 
 func _should_play_approach_for_order() -> bool:
 	if bool(current_order.get("boss", false)):
-		return true
+		return false
 	return int(order_index) % 5 == 0
 
 func _build_evaluation_payload() -> Dictionary:
