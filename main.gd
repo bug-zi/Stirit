@@ -1207,7 +1207,7 @@ func _build_home_info_panel() -> Control:
 
 	if home_tab == "rules":
 		content.add_child(_make_label("玩法说明", 32, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_CENTER))
-		content.add_child(_make_home_paragraph("1. API 配置是可选项；不配置也能玩，出锅时使用本地评分。\n2. 每单顾客会提出抽象需求。\n3. 选择 2-3 个食材、1-2 个调料和 1 种烹饪方式。\n4. 配置 API 后，AI 会根据顾客需求和菜品语义评分。\n5. 一局 5 单，第 5 单必出 Boss。"))
+		content.add_child(_make_home_paragraph("1. API 配置是可选项；不配置也能玩，出锅时使用本地评分。\n2. 每单顾客会提出抽象需求。\n3. 选择 2-3 个食材、1-2 个调料和 1 种烹饪方式。\n4. 配置 API 后，AI 会根据顾客需求和菜品语义评分。\n5. 一天 5 单，每天第 5 单必出 Boss。\n6. 第二十天游戏通关"))
 	else:
 		content.add_child(_make_label("游戏概况", 32, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_CENTER))
 		content.add_child(_make_home_paragraph("你经营一家未来校园夜市里的怪菜摊。顾客说不清自己想吃什么，只能给出情绪、场景和一点离谱暗示。你的任务是把这些需求翻译成食材组合，让小炒 AI-7 判断这锅东西到底有没有读懂人。"))
