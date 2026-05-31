@@ -2119,7 +2119,6 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 	row.add_child(icon)
 
 	var name_label := _make_label(str(item["name"]), 16, COLOR_TEXT)
-	button.drag_title = str(item["name"])
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -2128,7 +2127,6 @@ func _make_library_item_button(item: Dictionary, kind: String) -> Button:
 
 	if kind == "ingredient" or kind == "seasoning":
 		var price := _price_for_item(item, kind)
-		button.drag_price = "￥%d" % price
 		var price_label := _make_label("￥%d" % price, 15, Color(1.0, 0.82, 0.38), HORIZONTAL_ALIGNMENT_RIGHT)
 		price_label.custom_minimum_size = Vector2(44, 0)
 		price_label.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -2490,17 +2488,17 @@ func _show_result_screen(result: Dictionary) -> void:
 	var grade_total := _make_label("评级 %s   总分 %d" % [str(result["grade"]), int(result["total_score"])], 28, Color(0.83, 1.0, 0.78), HORIZONTAL_ALIGNMENT_CENTER)
 	grade_total.modulate = Color(1, 1, 1, 0)
 	left_box.add_child(grade_total)
-	var economy_1 := _make_label("成本 -%d   净收益 %+d" % [int(result["service_cost"]), int(result["net_profit"])], 21, Color(0.96, 0.88, 0.64), HORIZONTAL_ALIGNMENT_CENTER)
+	var economy_1 := _make_label("成本 -%d   报酬 +%d" % [int(result["service_cost"]), int(result["coins"])], 21, Color(0.96, 0.88, 0.64), HORIZONTAL_ALIGNMENT_CENTER)
 	economy_1.modulate = Color(1, 1, 1, 0)
 	left_box.add_child(economy_1)
 	var economy_2 := _make_label("资金 %d   经验 +%d" % [int(current_funds), int(result["exp_gain"])], 21, Color(0.96, 0.88, 0.64), HORIZONTAL_ALIGNMENT_CENTER)
 	economy_2.modulate = Color(1, 1, 1, 0)
 	left_box.add_child(economy_2)
 
-	var coins_gain := _make_label("报酬 +0", 28, Color(0.94, 0.96, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
-	coins_gain.modulate = Color(1, 1, 1, 0)
-	left_box.add_child(coins_gain)
-	coins_label = coins_gain
+	var net_profit_gain := _make_label("净收益 +0", 28, Color(0.94, 0.96, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	net_profit_gain.modulate = Color(1, 1, 1, 0)
+	left_box.add_child(net_profit_gain)
+	coins_label = net_profit_gain
 
 	var source_notice := _make_label(str(result["source_notice"]), 17, Color(0.7, 0.78, 0.88), HORIZONTAL_ALIGNMENT_CENTER)
 	source_notice.modulate = Color(1, 1, 1, 0)
@@ -2510,12 +2508,12 @@ func _show_result_screen(result: Dictionary) -> void:
 	var score_rows: Array[Control] = []
 	var score_bars: Array[ProgressBar] = []
 	for entry in [
-		{"name": "贴题度", "value": int(scores["relevance"])},
-		{"name": "美味度", "value": int(scores["taste"])},
-		{"name": "情绪命中", "value": int(scores["emotion"])},
-		{"name": "风险值", "value": int(scores["risk"])}
+		{"name": "贴题度", "value": int(scores["relevance"]), "color": Color(0.95, 0.82, 0.38)},
+		{"name": "美味度", "value": int(scores["taste"]), "color": Color(0.24, 0.78, 0.52)},
+		{"name": "情绪命中", "value": int(scores["emotion"]), "color": Color(0.68, 0.48, 0.98)},
+		{"name": "风险值", "value": int(scores["risk"]), "color": Color(1.0, 0.42, 0.35)}
 	]:
-		var row: Control = _make_score_bar(str(entry["name"]), int(entry["value"]))
+		var row: Control = _make_score_bar(str(entry["name"]), int(entry["value"]), entry.get("color", Color(0.86, 0.9, 0.96)))
 		row.modulate = Color(1, 1, 1, 0)
 		left_box.add_child(row)
 		score_rows.append(row)
@@ -2575,7 +2573,7 @@ func _show_result_screen(result: Dictionary) -> void:
 	root.add_child(next_button)
 
 	var grade_text: String = str(result.get("grade", "F"))
-	var target_coins: int = int(result.get("coins", 0))
+	var target_net_profit: int = int(result.get("net_profit", 0))
 	var tween := create_tween()
 	tween.tween_property(header, "modulate:a", 1.0, 0.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.tween_property(dish_label, "modulate:a", 1.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -2605,9 +2603,9 @@ func _show_result_screen(result: Dictionary) -> void:
 	tween.tween_property(comment, "modulate:a", 1.0, 0.32)
 	tween.tween_property(reaction, "modulate:a", 1.0, 0.32)
 
-	tween.tween_property(coins_gain, "modulate:a", 1.0, 0.12)
+	tween.tween_property(net_profit_gain, "modulate:a", 1.0, 0.12)
 	tween.tween_callback(Callable(self, "_play_sfx").bind("coin"))
-	tween.tween_method(Callable(self, "_set_number_label").bind(coins_gain, "报酬 +%d"), 0.0, float(target_coins), 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_method(Callable(self, "_set_number_label").bind(net_profit_gain, "净收益 %+d"), 0.0, float(target_net_profit), 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_callback(Callable(self, "_coin_bounce"))
 
 	tween.tween_property(next_button, "modulate:a", 1.0, 0.25)
@@ -4225,10 +4223,10 @@ func _add_selected_buttons(container: GridContainer, ids: Array, source: Array, 
 		button.pressed.connect(callback.bind(id))
 		container.add_child(button)
 
-func _make_score_bar(label_text: String, value: int) -> Control:
+func _make_score_bar(label_text: String, value: int, bar_color: Color) -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
-	var label := _make_label("%s  %d" % [label_text, value], 17, Color(0.86, 0.9, 0.96))
+	var label := _make_label("%s  %d" % [label_text, value], 17, bar_color.lerp(Color(0.86, 0.9, 0.96), 0.55))
 	box.add_child(label)
 	var bar := ProgressBar.new()
 	bar.name = "ScoreBar"
@@ -4238,6 +4236,25 @@ func _make_score_bar(label_text: String, value: int) -> Control:
 	bar.set_meta("target_value", value)
 	bar.show_percentage = false
 	bar.custom_minimum_size = Vector2(0, 22)
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.12, 0.12, 0.18, 0.85)
+	bg.border_color = Color(0.32, 0.34, 0.5, 0.55)
+	bg.border_width_left = 1
+	bg.border_width_top = 1
+	bg.border_width_right = 1
+	bg.border_width_bottom = 1
+	bg.corner_radius_top_left = 10
+	bg.corner_radius_top_right = 10
+	bg.corner_radius_bottom_left = 10
+	bg.corner_radius_bottom_right = 10
+	bar.add_theme_stylebox_override("background", bg)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = bar_color
+	fill.corner_radius_top_left = 10
+	fill.corner_radius_top_right = 10
+	fill.corner_radius_bottom_left = 10
+	fill.corner_radius_bottom_right = 10
+	bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(bar)
 	return box
 
@@ -4364,55 +4381,38 @@ class DraggableLibraryButton:
 	var drag_kind := ""
 	var drag_id := ""
 	var drag_icon: Texture2D
-	var drag_title := ""
-	var drag_price := ""
 
 	func _get_drag_data(_at_position: Vector2) -> Variant:
-		var preview := PanelContainer.new()
-		preview.custom_minimum_size = Vector2(220, 52)
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(0.08, 0.09, 0.16, 0.92)
-		style.border_color = Color(0.52, 0.56, 0.78, 0.9)
-		style.border_width_left = 2
-		style.border_width_top = 2
-		style.border_width_right = 2
-		style.border_width_bottom = 2
-		style.corner_radius_top_left = 12
-		style.corner_radius_top_right = 12
-		style.corner_radius_bottom_left = 12
-		style.corner_radius_bottom_right = 12
-		preview.add_theme_stylebox_override("panel", style)
-
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
-		row.offset_left = 10
-		row.offset_top = 8
-		row.offset_right = -10
-		row.offset_bottom = -8
-		row.set_anchors_preset(Control.PRESET_FULL_RECT)
-		preview.add_child(row)
-
 		if drag_icon is Texture2D:
-			var icon_rect := TextureRect.new()
-			icon_rect.texture = drag_icon
-			icon_rect.custom_minimum_size = Vector2(34, 34)
-			icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-			icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			row.add_child(icon_rect)
+			var icon_preview := TextureRect.new()
+			icon_preview.texture = drag_icon
+			icon_preview.custom_minimum_size = Vector2(52, 52)
+			icon_preview.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			icon_preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon_preview.modulate = Color(1, 1, 1, 0.95)
+			set_drag_preview(icon_preview)
+		return {"kind": drag_kind, "id": drag_id}
 
-		var label := Label.new()
-		var txt := drag_title
-		if drag_price != "":
-			txt = "%s %s" % [txt, drag_price]
-		label.text = txt
-		label.add_theme_font_size_override("font_size", 18)
-		label.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.clip_text = true
-		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(label)
+class DraggableIcon:
+	extends TextureRect
+	var drag_kind := ""
+	var drag_id := ""
 
-		set_drag_preview(preview)
+	func _ready() -> void:
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		mouse_filter = Control.MOUSE_FILTER_PASS
+
+	func _get_drag_data(_at_position: Vector2) -> Variant:
+		if not (texture is Texture2D):
+			return null
+		var icon_preview := TextureRect.new()
+		icon_preview.texture = texture
+		icon_preview.custom_minimum_size = Vector2(52, 52)
+		icon_preview.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		icon_preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon_preview.modulate = Color(1, 1, 1, 0.95)
+		set_drag_preview(icon_preview)
 		return {"kind": drag_kind, "id": drag_id}
 
 func _process_bg_movement(delta: float) -> void:
