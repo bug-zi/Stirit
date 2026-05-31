@@ -2508,12 +2508,12 @@ func _show_result_screen(result: Dictionary) -> void:
 	var score_rows: Array[Control] = []
 	var score_bars: Array[ProgressBar] = []
 	for entry in [
-		{"name": "贴题度", "value": int(scores["relevance"])},
-		{"name": "美味度", "value": int(scores["taste"])},
-		{"name": "情绪命中", "value": int(scores["emotion"])},
-		{"name": "风险值", "value": int(scores["risk"])}
+		{"name": "贴题度", "value": int(scores["relevance"]), "color": Color(0.95, 0.82, 0.38)},
+		{"name": "美味度", "value": int(scores["taste"]), "color": Color(0.24, 0.78, 0.52)},
+		{"name": "情绪命中", "value": int(scores["emotion"]), "color": Color(0.68, 0.48, 0.98)},
+		{"name": "风险值", "value": int(scores["risk"]), "color": Color(1.0, 0.42, 0.35)}
 	]:
-		var row: Control = _make_score_bar(str(entry["name"]), int(entry["value"]))
+		var row: Control = _make_score_bar(str(entry["name"]), int(entry["value"]), entry.get("color", Color(0.86, 0.9, 0.96)))
 		row.modulate = Color(1, 1, 1, 0)
 		left_box.add_child(row)
 		score_rows.append(row)
@@ -4223,10 +4223,10 @@ func _add_selected_buttons(container: GridContainer, ids: Array, source: Array, 
 		button.pressed.connect(callback.bind(id))
 		container.add_child(button)
 
-func _make_score_bar(label_text: String, value: int) -> Control:
+func _make_score_bar(label_text: String, value: int, bar_color: Color) -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
-	var label := _make_label("%s  %d" % [label_text, value], 17, Color(0.86, 0.9, 0.96))
+	var label := _make_label("%s  %d" % [label_text, value], 17, bar_color.lerp(Color(0.86, 0.9, 0.96), 0.55))
 	box.add_child(label)
 	var bar := ProgressBar.new()
 	bar.name = "ScoreBar"
@@ -4236,6 +4236,25 @@ func _make_score_bar(label_text: String, value: int) -> Control:
 	bar.set_meta("target_value", value)
 	bar.show_percentage = false
 	bar.custom_minimum_size = Vector2(0, 22)
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.12, 0.12, 0.18, 0.85)
+	bg.border_color = Color(0.32, 0.34, 0.5, 0.55)
+	bg.border_width_left = 1
+	bg.border_width_top = 1
+	bg.border_width_right = 1
+	bg.border_width_bottom = 1
+	bg.corner_radius_top_left = 10
+	bg.corner_radius_top_right = 10
+	bg.corner_radius_bottom_left = 10
+	bg.corner_radius_bottom_right = 10
+	bar.add_theme_stylebox_override("background", bg)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = bar_color
+	fill.corner_radius_top_left = 10
+	fill.corner_radius_top_right = 10
+	fill.corner_radius_bottom_left = 10
+	fill.corner_radius_bottom_right = 10
+	bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(bar)
 	return box
 
